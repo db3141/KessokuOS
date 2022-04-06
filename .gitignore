@@ -1,0 +1,6 @@
+.gdbinit
+.log.txt
+build/
+build/*
+documents/
+documents/*
