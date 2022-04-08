@@ -224,7 +224,7 @@ increment_floppy_position:
     jae ifp_reset_cylinder              ; If >= CYLINDER_COUNT - 1 then need to reset cylinder to 0
 
     add al, 1
-    mov byte [CURRENT_CYLINDER_ADDR], 0 ; Otherwise increment cylinder number by 1 and return
+    mov byte [CURRENT_CYLINDER_ADDR], al ; Otherwise increment cylinder number by 1 and return
     ret
 
     ifp_reset_cylinder:
