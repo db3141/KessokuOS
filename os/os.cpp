@@ -3,6 +3,7 @@
 #include "interrupts/idt.hpp"
 #include "interrupts/interrupt_handler.hpp"
 #include "interrupts/pic.hpp"
+#include "drivers/floppy_disk.hpp"
 #include "drivers/pit.hpp"
 #include "drivers/ps2.hpp"
 #include "drivers/ps2_keyboard.hpp"
@@ -69,6 +70,7 @@ namespace Kernel {
         IDT::initialize();
         IDT::set_entry(0x20, (void*)&PIT::interval_handler, 0x00000008, IDT::IDTGateType::INTERRUPT, true);
         IDT::set_entry(0x21, (void*)&PS2::Keyboard::keyboard_handler, 0x00000008, IDT::IDTGateType::INTERRUPT, true);
+        IDT::set_entry(0x26, (void*)&FloppyDisk::floppy_handler, 0x00000008, IDT::IDTGateType::INTERRUPT, true);
         IDT::load_table();
         VGA::put_string("Done!\n\n");
 
@@ -100,6 +102,14 @@ namespace Kernel {
         VGA::put_string("Done!\n");
         VGA::put_hex(read_cmos(0x10));
         VGA::new_line();
+
+        VGA::put_string("Intializing Floppy Disk... ");
+        if (FloppyDisk::initialize().is_error()) {
+            VGA::put_string("Failed :(\n");
+            disable_interrupts();
+            KERNEL_HALT();
+        }
+        VGA::put_string("Done! \n\n");
 
         /*
         while (true) {

@@ -20,6 +20,7 @@ SOURCE_FILES=\
 	drivers/ps2.cpp\
 	drivers/ps2_keyboard.cpp\
 	drivers/pit.cpp\
+	drivers/floppy_disk.cpp\
 	\
 	interrupts/idt.cpp\
 	interrupts/pic.cpp\
@@ -33,6 +34,7 @@ HEADER_FILES=\
 	drivers/ps2.hpp\
 	drivers/ps2_keyboard.hpp\
 	drivers/pit.hpp\
+	drivers/floppy_disk.hpp\
 	\
 	interrutps/idt.hpp\
 	interrupts/interrupt_handler.hpp\
