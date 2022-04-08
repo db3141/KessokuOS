@@ -1,4 +1,5 @@
 #include "idt.hpp"
+#include "interrupt_handler.hpp"
 
 namespace Kernel::IDT {
 
@@ -45,8 +46,11 @@ namespace Kernel::IDT {
     static IDT KERNEL_IDT;
 
     void initialize() {
-        KERNEL_IDT.size = 0;
         KERNEL_IDT.entries = IDT_ENTRIES;
+        for (size_t i = 0; i < IDT_MAX_ENTRY_COUNT; i++) {
+            set_entry(i, (void*)&InterruptHandler::interrupt_handler, 0x00000008, IDTGateType::INTERRUPT, true);
+        }
+        KERNEL_IDT.size = sizeof(IDTEntry) * IDT_MAX_ENTRY_COUNT;
     }
 
     IDTEntry idt_entry_create(u32 t_offset, u16 t_segmentSelector, IDTGateType t_gateType, bool t_32bit) {
@@ -62,15 +66,13 @@ namespace Kernel::IDT {
         return result;
     }
 
-    int add_entry(void* t_handlerAddress, u16 t_segmentSelector, IDTGateType t_gateType, bool t_32bit) {
-        const u32 entryCount = KERNEL_IDT.size / sizeof(IDTEntry);
-        if (entryCount >= IDT_MAX_ENTRY_COUNT) {
+    int set_entry(size_t t_index, void* t_handlerAddress, u16 t_segmentSelector, IDTGateType t_gateType, bool t_32bit) {
+        if (t_index >= IDT_MAX_ENTRY_COUNT) {
             return 1;
         }
 
         const IDTEntry entry = idt_entry_create(reinterpret_cast<u32>(t_handlerAddress), t_segmentSelector, t_gateType, t_32bit);
-        KERNEL_IDT.entries[entryCount] = entry;
-        KERNEL_IDT.size += sizeof(IDTEntry);
+        KERNEL_IDT.entries[t_index] = entry;
 
         return 0;
     }

@@ -13,7 +13,7 @@ namespace Kernel::IDT {
 
     void initialize();
 
-    int add_entry(void* t_handlerAddress, u16 t_segmentSelector, IDTGateType t_gateType, bool t_32bit);
+    int set_entry(size_t t_index, void* t_handlerAddress, u16 t_segmentSelector, IDTGateType t_gateType, bool t_32bit);
 
     void load_table();
 
