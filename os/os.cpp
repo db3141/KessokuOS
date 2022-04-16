@@ -48,7 +48,13 @@ namespace Kernel {
         }
     }
 
+    constexpr size_t STACK_SIZE = 8192;
+    u32 g_stack[STACK_SIZE / sizeof(u32)];
+
     extern "C" void kernel_main() {
+        // Update the stack pointer
+        asm("movl %0, %%esp;" : : "r"(g_stack + sizeof(g_stack)) :);
+
         PIT::initialize();
 
         VGA::initialize();
@@ -79,16 +85,14 @@ namespace Kernel {
         if (errorOr.is_error()) {
             VGA::put_hex(errorOr.get_error());
             VGA::put_string(" Failed :(\n");
-            disable_interrupts();
-            KERNEL_HALT();
+            KERNEL_STOP();
         }
         VGA::put_string("Done!\n");
 
         VGA::put_string("Initializing PS/2 Keyboard... ");
         if (PS2::Keyboard::initialize().is_error()) {
             VGA::put_string("Failed :(\n");
-            disable_interrupts();
-            KERNEL_HALT();
+            KERNEL_STOP();
         }
         VGA::put_string("Done! \n\n");
 
@@ -106,12 +110,15 @@ namespace Kernel {
         VGA::put_string("Intializing Floppy Disk... ");
         if (FloppyDisk::initialize().is_error()) {
             VGA::put_string("Failed :(\n");
-            disable_interrupts();
-            KERNEL_HALT();
+            KERNEL_STOP();
         }
-        VGA::put_string("Done! \n\n");
+        VGA::put_string("Done!\n");
 
-        /*
+        if (FloppyDisk::read_data(0, 0, 1).is_error()) {
+            VGA::put_string("Read failed :(\n");
+        }
+
+        //*
         while (true) {
             for (auto e = PS2::Keyboard::poll_event(); !e.is_error(); e = PS2::Keyboard::poll_event()) {
                 const auto event = e.get_value();
@@ -127,7 +134,7 @@ namespace Kernel {
         }
         //*/
 
-        //*
+        /*
         while (true) {
             VGA::put_string("Sleeping Zzz...\n");
             sleep(3000);

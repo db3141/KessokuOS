@@ -20,6 +20,8 @@ namespace Kernel::FloppyDisk {
     SZNN::ErrorOr<void> initialize();
     SZNN::ErrorOr<void> reset();
 
+    SZNN::ErrorOr<void> read_data(u8 t_drive, u32 t_address, u32 t_count);
+
     INTERRUPT_HANDLER void floppy_handler(InterruptHandler::InterruptFrame* t_frame);
 }
 

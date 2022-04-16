@@ -16,6 +16,7 @@ SOURCE_FILES=\
 	common.cpp\
 	gdt.cpp\
 	\
+	drivers/dma.cpp\
 	drivers/vga.cpp\
 	drivers/ps2.cpp\
 	drivers/ps2_keyboard.cpp\
@@ -30,6 +31,7 @@ HEADER_FILES=\
 	common.hpp\
 	gdt.hpp\
 	\
+	drivers/dma.hpp\
 	drivers/vga.hpp\
 	drivers/ps2.hpp\
 	drivers/ps2_keyboard.hpp\

@@ -32,5 +32,9 @@ namespace Kernel {
 }
 
 #define KERNEL_HALT() asm("hlt")
+#define KERNEL_STOP() do {\
+    disable_interrupts();\
+    KERNEL_HALT();\
+} while(false)
 
 #endif
