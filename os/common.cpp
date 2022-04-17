@@ -57,4 +57,10 @@ namespace Kernel {
         asm volatile ("cli");
     }
 
+    void memcpy(void* t_dest, const void* t_src, size_t t_count) {
+        for (size_t i = 0; i < t_count; i++) {
+            *(reinterpret_cast<u8*>(t_dest) + i) = *(reinterpret_cast<const u8*>(t_src) + i);
+        }
+    }
+
 }

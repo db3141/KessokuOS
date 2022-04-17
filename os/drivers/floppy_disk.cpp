@@ -24,8 +24,8 @@ namespace Kernel::FloppyDisk {
         COMMAND_READ_TRACK         = 2,         // generates IRQ6
         COMMAND_SPECIFY            = 3,         // * set drive parameters
         COMMAND_SENSE_DRIVE_STATUS = 4,
-        COMMAND_WRITE_DATA         = 5 | 0x40,  // * write to the disk
-        COMMAND_READ_DATA          = 6 | 0x40,  // * read from the disk
+        COMMAND_WRITE_DATA         = 5 | 0xC0,  // * write to the disk, or with 0xC0 to set MFM and MT bits
+        COMMAND_READ_DATA          = 6 | 0xC0,  // * read from the disk
         COMMAND_RECALIBRATE        = 7,         // * seek to cylinder 0
         COMMAND_SENSE_INTERRUPT    = 8,         // * ack IRQ6, get status of last command
         COMMAND_WRITE_DELETED_DATA = 9,
@@ -55,13 +55,18 @@ namespace Kernel::FloppyDisk {
     constexpr size_t TIMEOUT_TIME = 3 * PIT::TICKS_PER_SECOND;
     constexpr size_t DISK_SPINUP_WAIT_TIME = 300; // 300ms
 
-    constexpr size_t DMA_BUFFER_SIZE = 0x2400;
+    constexpr size_t SECTORS_PER_CYLINDER = 18; // TODO: make these dependant on the floppy type
+    constexpr size_t HEAD_COUNT = 2;
+
+    constexpr size_t DMA_BUFFER_SIZE = 0x4800;
     static u8 s_dmaBuffer[DMA_BUFFER_SIZE] __attribute__((aligned(0x10000))); // make sure buffer does not cross 64K boundary
 
     constexpr size_t PARAMETER_BUFFER_SIZE = 16;
     constexpr size_t RESULT_BUFFER_SIZE = 16;
     static u8 s_parameterBytes[PARAMETER_BUFFER_SIZE] = {0};
     static u8 s_resultBytes[RESULT_BUFFER_SIZE] = {0};
+
+    SZNN::ErrorOr<void> read_cylinder(u8 t_drive, u8 t_cylinder);
 
     SZNN::ErrorOr<void> send_command(Command t_command);
 
@@ -70,8 +75,21 @@ namespace Kernel::FloppyDisk {
     SZNN::ErrorOr<u8> read_msr_until_rqm();
     SZNN::ErrorOr<void> wait_for_irq();
 
+    struct CHSAddress {
+        u8 c, h, s;
+    };
+
+    constexpr CHSAddress lbaToCHS(size_t t_lba) {
+        const u8 cylinder = t_lba / (SECTORS_PER_CYLINDER * HEAD_COUNT);
+        const u8 head = (t_lba / SECTORS_PER_CYLINDER) % HEAD_COUNT;
+        const u8 sector = (t_lba % SECTORS_PER_CYLINDER) + 1;
+
+        return CHSAddress{cylinder, head, sector};
+    }
+
     // Base Case
     SZNN::ErrorOr<void> set_parameters(size_t t_index) {
+        (void)t_index; // get compiler to stop complaining about unused parameter
         return SZNN::ErrorOr<void>();
     }
 
@@ -241,17 +259,64 @@ namespace Kernel::FloppyDisk {
         return SZNN::ErrorOr<void>();
     }
 
-    SZNN::ErrorOr<void> read_data(u8 t_drive, u32 t_address, u32 t_count) {
+    SZNN::ErrorOr<void> read_data(u8 t_drive, size_t t_lba, size_t t_count, u8* r_buffer) {
+        ASSERT(t_count > 0, -1); // TODO: error code
+
+        const CHSAddress startAddress = lbaToCHS(t_lba);
+        const CHSAddress endAddress = lbaToCHS(t_lba + t_count);
+
+        const auto get_next_cylinder = [](CHSAddress t_address) -> CHSAddress {
+            t_address.c++;
+            t_address.h = 0;
+            t_address.s = 0;
+            return t_address;
+        };
+
+        CHSAddress currentAddress = startAddress;
+        for (; currentAddress.c != endAddress.c; currentAddress = get_next_cylinder(currentAddress)) {
+            TRY(read_cylinder(t_drive, currentAddress.c));
+
+            const size_t sectorIndex = (currentAddress.h * SECTORS_PER_CYLINDER) + (currentAddress.s - 1);
+
+            const size_t offset = sectorIndex * SECTOR_SIZE;
+            const size_t byteCount = (SECTORS_PER_CYLINDER - sectorIndex - 1) * SECTOR_SIZE;
+
+            memcpy(r_buffer, s_dmaBuffer + offset, byteCount);
+            r_buffer += byteCount;
+        }
+
+        if (endAddress.h != 0 || endAddress.s != 0) {
+            TRY(read_cylinder(t_drive, currentAddress.c));
+
+            const size_t startSectorIndex = (currentAddress.h * SECTORS_PER_CYLINDER) + (currentAddress.s - 1);
+            const size_t endSectorIndex = (endAddress.h * SECTORS_PER_CYLINDER) + (endAddress.s - 1);
+
+            const size_t offset = startSectorIndex * SECTOR_SIZE;
+            const size_t byteCount = (endSectorIndex - startSectorIndex) * SECTOR_SIZE;
+
+            memcpy(r_buffer, s_dmaBuffer + offset, byteCount);
+        }
+
+        return SZNN::ErrorOr<void>();
+    }
+
+    SZNN::ErrorOr<void> read_cylinder(u8 t_drive, u8 t_cylinder) {
         TRY(select_drive(t_drive, true));
 
         TRY(DMA::set_mode(2, 0b10, true, false, 0b01)); // prepare DMA channel for reading (TODO: try different transfer types)
 
-        TRY(execute_command(COMMAND_READ_DATA, 0, 0, 0, 1, 2, 18, 0x1B, 0xFF));
-
-        for (size_t i = 0; i < 8; i++) {
-            VGA::put_hex(s_dmaBuffer[i]); VGA::new_line();
-        }
-        VGA::new_line();
+        TRY(execute_command(
+                COMMAND_READ_DATA,
+                (0 << 2) | s_floppyState.currentDrive,
+                t_cylinder,
+                0,
+                1,
+                2,
+                SECTORS_PER_CYLINDER,
+                0x1B,
+                0xFF
+            )
+        );
 
         return SZNN::ErrorOr<void>();
     }
@@ -300,10 +365,6 @@ namespace Kernel::FloppyDisk {
 
     SZNN::ErrorOr<void> select_drive(u8 t_drive, bool t_motorOn) {
         ASSERT(t_drive < 4, -1); // TODO
-
-        const u8 s1 = (8 << 4) | 0;
-        const u8 s2 = (5 << 1) | 0;
-        const u8 dor = ((!!t_motorOn) << (4 + t_drive)) | (0x0C | t_drive);
 
         if (s_floppyState.currentDrive != t_drive) {
             port_write_byte(CONFIGURATION_CONTROL_REGISTER, 0); // set to 0 for 1.44MiB floppy

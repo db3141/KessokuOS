@@ -4,7 +4,7 @@ BOOT0=$(BUILD_DIR)/bootloader/boot0.o
 BOOT1=$(BUILD_DIR)/bootloader/boot1.o
 OS=$(BUILD_DIR)/os/os.elf
 
-ARCHIVE_FILES=$(BOOT1) $(OS)
+ARCHIVE_FILES=$(BOOT1) $(OS) media/*
 FILE_ARCHIVE=$(BUILD_DIR)/file_system.tar
 
 DISK_IMG=$(BUILD_DIR)/bootdisk.img

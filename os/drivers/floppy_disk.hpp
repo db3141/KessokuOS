@@ -16,11 +16,13 @@ namespace Kernel::FloppyDisk {
         ERROR_LOCK_FAILED,
         ERROR_INVALID_DRIVE,
     };
+
+    constexpr size_t SECTOR_SIZE = 512;
     
     SZNN::ErrorOr<void> initialize();
     SZNN::ErrorOr<void> reset();
 
-    SZNN::ErrorOr<void> read_data(u8 t_drive, u32 t_address, u32 t_count);
+    SZNN::ErrorOr<void> read_data(u8 t_drive, size_t t_lba, size_t t_count, u8* r_buffer);
 
     INTERRUPT_HANDLER void floppy_handler(InterruptHandler::InterruptFrame* t_frame);
 }

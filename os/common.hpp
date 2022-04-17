@@ -29,6 +29,7 @@ namespace Kernel {
     void enable_interrupts();
     void disable_interrupts();
 
+    void memcpy(void* t_dest, const void* t_src, size_t t_count);
 }
 
 #define KERNEL_HALT() asm("hlt")

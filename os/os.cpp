@@ -114,9 +114,15 @@ namespace Kernel {
         }
         VGA::put_string("Done!\n");
 
-        if (FloppyDisk::read_data(0, 0, 1).is_error()) {
+        u8 buffer[2 * FloppyDisk::SECTOR_SIZE];
+        if (FloppyDisk::read_data(0, 73, 2, buffer).is_error()) {
             VGA::put_string("Read failed :(\n");
+            KERNEL_STOP();
         }
+        for (size_t i = 0; i < 2 * FloppyDisk::SECTOR_SIZE; i++) {
+            VGA::put_char(buffer[i]);
+        }
+        VGA::new_line();
 
         //*
         while (true) {
