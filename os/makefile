@@ -67,6 +67,5 @@ create_build_dir:
 
 .PHONY: clean
 clean:
-	-rmdir $(BUILD_DIR)/drivers $(BUILD_DIR)/interrupts
-	-rm $(BUILD_DIR)/*
+	-rm -rf $(BUILD_DIR)/*
 	-rmdir $(BUILD_DIR)

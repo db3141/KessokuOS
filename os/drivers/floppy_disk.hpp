@@ -15,6 +15,8 @@ namespace Kernel::FloppyDisk {
         ERROR_UNSUPPORTED_VERSION,
         ERROR_LOCK_FAILED,
         ERROR_INVALID_DRIVE,
+        ERROR_INVALID_PARAMETER,
+        ERROR_COMMAND_FAILED
     };
 
     constexpr size_t SECTOR_SIZE = 512;

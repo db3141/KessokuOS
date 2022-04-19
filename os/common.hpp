@@ -38,4 +38,10 @@ namespace Kernel {
     KERNEL_HALT();\
 } while(false)
 
+#define GOT_HERE() do {\
+    VGA::put_string("GOT HERE: '" __FILE__ "' (");\
+    VGA::put_unsigned_decimal(__LINE__);\
+    VGA::put_string(")\n");\
+} while(false)
+
 #endif

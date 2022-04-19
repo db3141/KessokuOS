@@ -95,7 +95,7 @@ namespace Kernel::FloppyDisk {
 
     template <typename T, typename ...Ts>
     SZNN::ErrorOr<void> set_parameters(size_t t_index, T t_parameter, Ts... t_rest) {
-        ASSERT(t_index < PARAMETER_BUFFER_SIZE, -1); // TODO: error code
+        ASSERT(t_index < PARAMETER_BUFFER_SIZE, ERROR_INVALID_PARAMETER);
         s_parameterBytes[t_index] = t_parameter;
 
         return set_parameters(t_index + 1, t_rest...);
@@ -224,7 +224,7 @@ namespace Kernel::FloppyDisk {
 
     SZNN::ErrorOr<void> initialize() {
         s_floppyState.waitingForIRQ = true;
-        s_floppyState.currentDrive = -1;
+        s_floppyState.currentDrive = 0;
         s_floppyState.diskMotorOn[0] = false;
         s_floppyState.diskMotorOn[1] = false;
         s_floppyState.diskMotorOn[2] = false;
@@ -243,7 +243,7 @@ namespace Kernel::FloppyDisk {
         TRY(execute_command(COMMAND_RECALIBRATE, 0));
         TRY(execute_command(COMMAND_SENSE_INTERRUPT));
 
-        TRY(DMA::initialize_channel(2, (void*)s_dmaBuffer, DMA_BUFFER_SIZE - 1)); // set-up DMA on channel 2 (floppy disk channel)
+        TRY(DMA::initialize_channel(2, s_dmaBuffer, DMA_BUFFER_SIZE - 1)); // set-up DMA on channel 2 (floppy disk channel)
 
         return SZNN::ErrorOr<void>();
     }
@@ -254,13 +254,13 @@ namespace Kernel::FloppyDisk {
 
         TRY(wait_for_irq());
 
-        TRY(select_drive(0, false)); // TODO: support more than one drive
+        TRY(select_drive(s_floppyState.currentDrive, s_floppyState.diskMotorOn[s_floppyState.currentDrive]));
 
         return SZNN::ErrorOr<void>();
     }
 
     SZNN::ErrorOr<void> read_data(u8 t_drive, size_t t_lba, size_t t_count, u8* r_buffer) {
-        ASSERT(t_count > 0, -1); // TODO: error code
+        ASSERT(t_count > 0, ERROR_INVALID_PARAMETER);
 
         const CHSAddress startAddress = lbaToCHS(t_lba);
         const CHSAddress endAddress = lbaToCHS(t_lba + t_count);
@@ -303,7 +303,7 @@ namespace Kernel::FloppyDisk {
     SZNN::ErrorOr<void> read_cylinder(u8 t_drive, u8 t_cylinder) {
         TRY(select_drive(t_drive, true));
 
-        TRY(DMA::set_mode(2, 0b10, true, false, 0b01)); // prepare DMA channel for reading (TODO: try different transfer types)
+        TRY(DMA::set_mode(2, 0b10, true, false, 0b01)); // prepare DMA channel for reading
 
         TRY(execute_command(
                 COMMAND_READ_DATA,
@@ -335,7 +335,7 @@ namespace Kernel::FloppyDisk {
 
         for (size_t i = 0; i < get_parameter_count(t_command); i++) {
             msr = TRY(read_msr_until_rqm());
-            ASSERT((msr & 0xc0) == 0x80, -1); // TODO: error code
+            ASSERT((msr & 0xc0) == 0x80, ERROR_COMMAND_FAILED);
 
             port_write_byte(DATA_FIFO, s_parameterBytes[i]);
         }
@@ -350,21 +350,19 @@ namespace Kernel::FloppyDisk {
             for (size_t i = 0; i < resultByteCount - 1; i++) {
                 s_resultBytes[i] = port_read_byte(DATA_FIFO);
                 msr = TRY(read_msr_until_rqm());
-                ASSERT((msr & 0x50) == 0x50, -1); // TODO: error code
+                ASSERT((msr & 0x50) == 0x50, ERROR_COMMAND_FAILED);
             }
 
             s_resultBytes[resultByteCount - 1] = port_read_byte(DATA_FIFO);
             msr = TRY(read_msr_until_rqm());
-            ASSERT((msr & 0x50) == 0x00, -1); // TODO: error code
-
-            // TODO: retry command if fails here!
+            ASSERT((msr & 0x50) == 0x00, ERROR_COMMAND_FAILED);
         }
 
         return SZNN::ErrorOr<void>();
     }
 
     SZNN::ErrorOr<void> select_drive(u8 t_drive, bool t_motorOn) {
-        ASSERT(t_drive < 4, -1); // TODO
+        ASSERT(t_drive < 4, ERROR_INVALID_PARAMETER);
 
         if (s_floppyState.currentDrive != t_drive) {
             port_write_byte(CONFIGURATION_CONTROL_REGISTER, 0); // set to 0 for 1.44MiB floppy
@@ -377,7 +375,6 @@ namespace Kernel::FloppyDisk {
         s_floppyState.currentDrive = t_drive;
         s_floppyState.diskMotorOn[t_drive] = t_motorOn;
 
-        // TRY(command_version()); // TODO: figure out why this makes it work
         sleep(DISK_SPINUP_WAIT_TIME); // wait for disk to spin up
 
         return SZNN::ErrorOr<void>();
