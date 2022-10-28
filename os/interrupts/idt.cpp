@@ -43,7 +43,7 @@ namespace Kernel::IDT {
     constexpr size_t IDT_MAX_ENTRY_COUNT = 256;
 
     static IDTEntry IDT_ENTRIES[IDT_MAX_ENTRY_COUNT];
-    static IDT KERNEL_IDT;
+    static IDT KERNEL_IDT = { 0, 0, nullptr };
 
     void initialize() {
         KERNEL_IDT.entries = IDT_ENTRIES;

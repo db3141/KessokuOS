@@ -2,6 +2,8 @@
 #include "pit.hpp"
 #include "interrupts/pic.hpp"
 
+#include "drivers/vga.hpp"
+
 namespace Kernel::PIT {
 
     enum Port : u8 {
@@ -31,10 +33,9 @@ namespace Kernel::PIT {
 
     constexpr u32 BASE_FREQUENCY = 1193182;
 
-    static u32 ticks;
+    static u32 s_ticks = 0;
 
     void initialize() {
-        ticks = 0;
         set_frequency(Channel::ZERO, 1000);
     }
 
@@ -60,11 +61,11 @@ namespace Kernel::PIT {
     }
 
     u32 get_ticks() {
-        return ticks;
+        return s_ticks;
     }
 
     INTERRUPT_HANDLER void interval_handler(InterruptHandler::InterruptFrame* t_frame) {
-        ticks++;
+        s_ticks++;
         PIC::send_end_of_interrupt(0x20);
     }
 

@@ -14,7 +14,6 @@ namespace Kernel::MemoryManager {
     };
 
     struct MemoryInfo {
-        u8* basePtr;
         BlockHeader* baseNode;
         BlockHeader* tailNode;
 
@@ -34,8 +33,9 @@ namespace Kernel::MemoryManager {
 
     extern "C" u8 _kernel_end[];
 
-    u64* const MEMORY_INFORMATION_TABLE = (u64*) 0x7000;
     constexpr size_t PAGE_SIZE = 4096; // TODO: change this
+    u8* const HEAP_BASE_ADDRESS = _kernel_end - (int(_kernel_end) % PAGE_SIZE) + PAGE_SIZE;
+    u64* const MEMORY_INFORMATION_TABLE = (u64*) 0x7000;
 
     static MemoryInfo s_memoryInfo;
     static MemoryRangeTable s_memoryRangeTable;
@@ -45,10 +45,8 @@ namespace Kernel::MemoryManager {
 
 
     SZNN::ErrorOr<void> initialize() {
-        u8* const HEAP_BASE_ADDRESS = _kernel_end - (int(_kernel_end) % PAGE_SIZE) + PAGE_SIZE;
-
         initialize_memory_range();
-        s_memoryInfo = MemoryInfo { HEAP_BASE_ADDRESS, nullptr, nullptr, {} };
+        s_memoryInfo = MemoryInfo { nullptr, nullptr, {} };
 
         VGA::put_string("Kernel End: ");
         VGA::put_hex(int(_kernel_end));
@@ -65,7 +63,7 @@ namespace Kernel::MemoryManager {
         const size_t paddedSize = get_smallest_gte_multiple(t_size, sizeof(u32));
 
         if (s_memoryInfo.baseNode == nullptr) {
-            s_memoryInfo.baseNode = reinterpret_cast<BlockHeader*>(s_memoryInfo.basePtr);
+            s_memoryInfo.baseNode = reinterpret_cast<BlockHeader*>(HEAP_BASE_ADDRESS);
             s_memoryInfo.tailNode = s_memoryInfo.baseNode;
 
             *s_memoryInfo.baseNode = BlockHeader{ nullptr, nullptr, paddedSize, true };
@@ -157,3 +155,28 @@ namespace Kernel {
 
 }
 
+void* operator new(size_t t_size) {
+    return Kernel::kmalloc(t_size);
+}
+
+void* operator new[](size_t t_size) {
+    return Kernel::kmalloc(t_size);
+}
+
+void operator delete(void* t_memory) {
+    Kernel::kfree(t_memory);
+}
+
+void operator delete[](void* t_memory) {
+    Kernel::kfree(t_memory);
+}
+
+void operator delete(void* t_memory, size_t t_size) {
+    (void)t_size; // stop compiler complaining about unused parameter
+    Kernel::kfree(t_memory);
+}
+
+void operator delete[](void* t_memory, size_t t_size) {
+    (void)t_size; // stop compiler complaining about unused parameter
+    Kernel::kfree(t_memory);
+}

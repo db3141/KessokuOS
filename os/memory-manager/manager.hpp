@@ -22,4 +22,14 @@ namespace Kernel {
 
 }
 
+
+void* operator new(size_t t_size);
+void* operator new[](size_t t_size);
+
+void operator delete(void* t_memory);
+void operator delete[](void* t_memory);
+void operator delete(void* t_memory, size_t t_size);
+void operator delete[](void* t_memory, size_t t_size);
+
+
 #endif

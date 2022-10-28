@@ -11,6 +11,7 @@ namespace Kernel::VGA {
 
     void initialize();
 
+    void clear_line();
     void clear_screen();
 
     void put_char(char t_c);

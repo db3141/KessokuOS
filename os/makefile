@@ -2,7 +2,7 @@ CXX=i686-elf-g++
 
 PWD=$(shell pwd)
 
-CXXFLAGS=-ffreestanding -fno-builtin -nostdlib -ggdb -Wall -Wextra -mgeneral-regs-only -I$(PWD)
+CXXFLAGS=-ffreestanding -fno-exceptions -fno-rtti -fno-stack-protector -nostdlib -ggdb -Wall -Wextra -mgeneral-regs-only -I$(PWD)
 LINK_FLAGS=-lgcc
 
 BUILD_DIR=../build/os
@@ -52,11 +52,17 @@ HEADER_FILES=\
 
 OBJS=$(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SOURCE_FILES))
 
-# TODO: set up global constructors
-#CRTBEGIN_OBJ:=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtbegin.o)
-#CRTEND_OBJ:=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtend.o)
+CRTI_OBJ:=$(BUILD_DIR)/crt/crti.o
+CRTBEGIN_OBJ:=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtbegin.o)
+CRTEND_OBJ:=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtend.o)
+CRTN_OBJ:=$(BUILD_DIR)/crt/crtn.o
+
+OBJ_LINK_LIST:=$(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJS) $(CRTEND_OBJ) $(CRTN_OBJ)
 
 all: $(OUTPUT_FILE)
+
+$(BUILD_DIR)/crt/%.o: crt/%.asm | create_build_dir
+	nasm -f elf $< -o $@ -w+all
 
 $(BUILD_DIR)/%.o: %.cpp | create_build_dir
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(LINK_FLAGS)
@@ -64,13 +70,13 @@ $(BUILD_DIR)/%.o: %.cpp | create_build_dir
 $(OUTPUT_FILE): $(UNSTRIPPED_OUTPUT_FILE)
 	strip -s $(UNSTRIPPED_OUTPUT_FILE) -o $(OUTPUT_FILE)
 
-$(UNSTRIPPED_OUTPUT_FILE): $(OBJS)
-	$(CXX) -T $(LINKER_SCRIPT) -o $(UNSTRIPPED_OUTPUT_FILE) $(OBJS) $(CXXFLAGS) $(LINK_FLAGS)
+$(UNSTRIPPED_OUTPUT_FILE): $(OBJ_LINK_LIST)
+	$(CXX) -T $(LINKER_SCRIPT) -o $(UNSTRIPPED_OUTPUT_FILE) $(OBJ_LINK_LIST) $(CXXFLAGS) $(LINK_FLAGS)
 
 .PHONY: create_build_dir
 create_build_dir:
 	-mkdir $(BUILD_DIR)
-	-mkdir $(BUILD_DIR)/drivers $(BUILD_DIR)/interrupts $(BUILD_DIR)/memory-manager
+	-mkdir $(BUILD_DIR)/drivers $(BUILD_DIR)/interrupts $(BUILD_DIR)/memory-manager $(BUILD_DIR)/crt
 
 .PHONY: clean
 clean:

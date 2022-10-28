@@ -3,6 +3,9 @@
 
 namespace Kernel::VGA {
 
+    constexpr size_t TTY_WIDTH = 80;
+    constexpr size_t TTY_HEIGHT = 25;
+
     u16* const TEXT_BUFFER = (u16*) 0xB8000;
 
     static CursorPos cursor = { 0, 0 };
@@ -10,17 +13,24 @@ namespace Kernel::VGA {
     void initialize() {
         clear_screen();
     }
+
+    void clear_line() {
+        for (u32 x = 0; x < TTY_WIDTH; x++) {
+            TEXT_BUFFER[cursor.y * TTY_WIDTH + x] = ' ';
+        }
+        cursor.x = 0;
+    }
     
     void clear_screen() {
-        for (u32 i = 0; i < 80 * 25; i++) {               
+        for (u32 i = 0; i < TTY_WIDTH * TTY_HEIGHT; i++) {
             TEXT_BUFFER[i] = 0x0700;
         }
         set_cursor_pos(0, 0);
     }
 
     void put_char(char t_c) {
-        TEXT_BUFFER[cursor.y * 80 + cursor.x] = 0x0700 | t_c;
-        const u8 newX = (cursor.x + 1) % 80;
+        TEXT_BUFFER[cursor.y * TTY_WIDTH + cursor.x] = 0x0700 | t_c;
+        const u8 newX = (cursor.x + 1) % TTY_WIDTH;
         const u8 newY = (newX == 0) ? (cursor.y + 1) : (cursor.y);
         set_cursor_pos(newX, newY);
     }
@@ -28,11 +38,20 @@ namespace Kernel::VGA {
     void put_string(const char* t_string) {
         for (const char* p = t_string; *p != '\0'; p++) {
             const char c = *p;
-            if (c == '\n') {
-                new_line();
-            }
-            else {
-                put_char(*p);
+            switch (c) {
+                case '\n':
+                    new_line();
+                    break;
+                case '\b':
+                    if (cursor.x > 0) {
+                        set_cursor_pos(cursor.x - 1, cursor.y);
+                    }
+                    break;
+                case '\r':
+                    set_cursor_pos(0, cursor.y);
+                    break;
+                default:
+                    put_char(c);
             }
         }
     }
@@ -52,7 +71,7 @@ namespace Kernel::VGA {
     }
 
     void put_signed_decimal(s32 t_value) {
-        if (t_value & 0x80000000) {
+        if (t_value < 0) {
             put_char('-');
             t_value = -t_value;
         }
@@ -65,7 +84,7 @@ namespace Kernel::VGA {
             return;
         }
 
-        constexpr s32 MAX_DIGITS = 10; // 2^32 - 1 = 4294967295 which has 10 digits
+        constexpr s32 MAX_DIGITS = 10; // UINT_MAX = 2^32 - 1 = 4294967295 which has 10 digits
         char DIGIT_BUFFER[MAX_DIGITS] = {0}; 
 
         // Calculate digits and write them to DIGIT_BUFFER (LSD first)
@@ -96,18 +115,18 @@ namespace Kernel::VGA {
         cursor.x = t_x;
         cursor.y = t_y;
 
-        for (; cursor.y >= 25; cursor.y--) {
-            for (u16 y = 0; y < 24; y++) {
-                for (u16 x = 0; x < 80; x++) {
-                    TEXT_BUFFER[y * 80 + x] = TEXT_BUFFER[(y + 1) * 80 + x];
+        for (; cursor.y >= TTY_HEIGHT; cursor.y--) {
+            for (u16 y = 0; y < TTY_HEIGHT - 1; y++) {
+                for (u16 x = 0; x < TTY_WIDTH; x++) {
+                    TEXT_BUFFER[y * TTY_WIDTH + x] = TEXT_BUFFER[(y + 1) * TTY_WIDTH + x];
                 }
             }
-            for (u8 x = 0; x < 80; x++) {
-                TEXT_BUFFER[24 * 80 + x] = ' ';
+            for (u8 x = 0; x < TTY_WIDTH; x++) {
+                TEXT_BUFFER[(TTY_HEIGHT - 1) * TTY_WIDTH + x] = ' ';
             }
         }
 
-        const u16 cursorPos = cursor.y * 80 + cursor.x;
+        const u16 cursorPos = cursor.y * TTY_WIDTH + cursor.x;
 
         port_write_byte(0x3D4, 14); // tell VGA board that we are setting the high cursor byte
         port_write_byte(0x3D5, cursorPos >> 8);

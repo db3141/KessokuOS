@@ -362,6 +362,150 @@ namespace Kernel::PS2::Keyboard {
         }
     }
 
+    constexpr char get_keycode_char(Keycode t_keycode) {
+        switch (t_keycode) {
+            case KEYCODE_A:
+                return 'a';
+            case KEYCODE_B:
+                return 'b';
+            case KEYCODE_C:
+                return 'c';
+            case KEYCODE_D:
+                return 'd';
+            case KEYCODE_E:
+                return 'e';
+            case KEYCODE_F:
+                return 'f';
+            case KEYCODE_G:
+                return 'g';
+            case KEYCODE_H:
+                return 'h';
+            case KEYCODE_I:
+                return 'i';
+            case KEYCODE_J:
+                return 'j';
+            case KEYCODE_K:
+                return 'k';
+            case KEYCODE_L:
+                return 'l';
+            case KEYCODE_M:
+                return 'm';
+            case KEYCODE_N:
+                return 'n';
+            case KEYCODE_O:
+                return 'o';
+            case KEYCODE_P:
+                return 'p';
+            case KEYCODE_Q:
+                return 'q';
+            case KEYCODE_R:
+                return 'r';
+            case KEYCODE_S:
+                return 's';
+            case KEYCODE_T:
+                return 't';
+            case KEYCODE_U:
+                return 'u';
+            case KEYCODE_V:
+                return 'v';
+            case KEYCODE_W:
+                return 'w';
+            case KEYCODE_X:
+                return 'x';
+            case KEYCODE_Y:
+                return 'y';
+            case KEYCODE_Z:
+                return 'z';
+
+            case KEYCODE_BACKTICK:
+                return '`';
+            case KEYCODE_0:
+                return '0';
+            case KEYCODE_1:
+                return '1';
+            case KEYCODE_2:
+                return '2';
+            case KEYCODE_3:
+                return '3';
+            case KEYCODE_4:
+                return '4';
+            case KEYCODE_5:
+                return '5';
+            case KEYCODE_6:
+                return '6';
+            case KEYCODE_7:
+                return '7';
+            case KEYCODE_8:
+                return '8';
+            case KEYCODE_9:
+                return '9';
+            case KEYCODE_MINUS:
+                return '-';
+            case KEYCODE_EQUALS:
+                return '=';
+            case KEYCODE_KEYPAD_SLASH:
+                return '/';
+            case KEYCODE_KEYPAD_MULTIPLY:
+                return '*';
+            case KEYCODE_KEYPAD_MINUS:
+                return '-';
+
+            case KEYCODE_TAB:
+                return '\t';
+            case KEYCODE_LEFT_BRACKET:
+                return '[';
+            case KEYCODE_RIGHT_BRACKET:
+                return ']';
+            case KEYCODE_KEYPAD_PLUS:
+                return '+';
+
+            case KEYCODE_SEMICOLON:
+                return ';';
+            case KEYCODE_APOSTROPHE:
+                return '\'';
+            case KEYCODE_HASH:
+                return '#';
+
+            case KEYCODE_BACKSLASH:
+                return '\\';
+            case KEYCODE_COMMA:
+                return ',';
+            case KEYCODE_FULLSTOP:
+                return '.';
+            case KEYCODE_SLASH:
+                return '/';
+
+            case KEYCODE_SPACE:
+                return ' ';
+            case KEYCODE_KEYPAD_FULLSTOP:
+                return '.';
+
+            case KEYCODE_KEYPAD_0:
+                return '0';
+            case KEYCODE_KEYPAD_1:
+                return '1';
+            case KEYCODE_KEYPAD_2:
+                return '2';
+            case KEYCODE_KEYPAD_3:
+                return '3';
+            case KEYCODE_KEYPAD_4:
+                return '4';
+            case KEYCODE_KEYPAD_5:
+                return '5';
+            case KEYCODE_KEYPAD_6:
+                return '6';
+            case KEYCODE_KEYPAD_7:
+                return '7';
+            case KEYCODE_KEYPAD_8:
+                return '8';
+            case KEYCODE_KEYPAD_9:
+                return '9';
+
+            default:
+                return '\0';
+        }
+    }
+
     SZNN::ErrorOr<void> initialize();
 
     SZNN::ErrorOr<KeyboardEvent> poll_event();

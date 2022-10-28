@@ -60,6 +60,7 @@ namespace Kernel {
     
 }
 
+// TODO: test all of these!
 void* memcpy(void* t_dest, const void* t_src, size_t t_count) {
     for (size_t i = 0; i < t_count; i++) {
         *(reinterpret_cast<unsigned char*>(t_dest) + i) = *(reinterpret_cast<const unsigned char*>(t_src) + i);

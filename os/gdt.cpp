@@ -14,12 +14,11 @@ namespace Kernel::GDT {
 
     constexpr size_t GDT_MAX_ENTRY_COUNT = 5;
 
-    static GDTEntry GDT_ENTRIES[GDT_MAX_ENTRY_COUNT];
-    static GDT KERNEL_GDT;
+    static GDTEntry GDT_ENTRIES[GDT_MAX_ENTRY_COUNT] = { { 0, 0, 0, 0 } };
+    static GDT KERNEL_GDT = { 0, 0, &GDT_ENTRIES[0] };
 
     void initialize() {
-        KERNEL_GDT.entries = &GDT_ENTRIES[0];
-        KERNEL_GDT.size = 0;
+        ;
     }
 
     int add_entry(u16 t_w1, u16 t_w2, u16 t_w3, u16 t_w4) {

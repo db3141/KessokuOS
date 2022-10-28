@@ -10,7 +10,7 @@ namespace Kernel::PS2::Keyboard {
     constexpr u32 SEND_COMMAND_RESPONSE_RESEND_LIMIT = 3;
     constexpr size_t KEYBOARD_EVENT_QUEUE_SIZE = 32;
 
-    static bool KEYBOARD_KEY_STATE[256];
+    static bool KEYBOARD_KEY_STATE[256] = {0};
     static Data::Queue<KeyboardEvent, KEYBOARD_EVENT_QUEUE_SIZE> KEYBOARD_EVENT_QUEUE;
 
     enum Command : u8 {
@@ -53,12 +53,6 @@ namespace Kernel::PS2::Keyboard {
             return ERROR_KEYBOARD_SELF_TEST_FAILED;
         }
         TRY(resend_until_success_or_timeout(COMMAND_ENABLE_SCANNING));
-
-        // Initialize data structures
-        for (size_t i = 0; i < 256; i++) {
-            KEYBOARD_KEY_STATE[i] = false;
-        }
-        KEYBOARD_EVENT_QUEUE = Data::Queue<KeyboardEvent, KEYBOARD_EVENT_QUEUE_SIZE>();
 
         return SZNN::ErrorOr<void>();
     }

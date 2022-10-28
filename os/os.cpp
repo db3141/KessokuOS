@@ -12,23 +12,30 @@
 
 namespace Kernel {
 
-    constexpr size_t STACK_SIZE = 8192;
-    u32 g_stack[STACK_SIZE / sizeof(u32)];
+    constexpr size_t STACK_SIZE = 16384;
+    u32 g_stack[STACK_SIZE / sizeof(u32)] = {0};
 
-    extern "C" char _kernel_end[];
+    extern "C" void _init();
+    extern "C" void _fini();
 
-    extern "C" void kernel_main() {
+    extern "C" void kernel_early_main();
+    extern "C" void kernel_main();
+
+    void kernel_early_main() {
+        _init();
+
         // Update the stack pointer
         asm("movl %0, %%esp;" : : "r"(g_stack + sizeof(g_stack)) :);
 
+        kernel_main();
+        _fini();
+    }
+
+    void kernel_main() {
         PIT::initialize();
 
         VGA::initialize();
         VGA::put_string("Hello World!\n\n");
-
-        VGA::put_string("Kernel End: ");
-        VGA::put_hex(int(_kernel_end));
-        VGA::new_line();
 
         VGA::put_string("Initializing PIC... ");
         PIC::initialize();
@@ -80,11 +87,14 @@ namespace Kernel {
         }
         VGA::put_string("Done!\n");
 
+        /*
         u8 buffer[2 * FloppyDisk::SECTOR_SIZE];
         if (FloppyDisk::read_data(0, 73, 2, buffer).is_error()) {
             VGA::put_string("Read failed :(\n");
             KERNEL_STOP();
         }
+        */
+
         /*
         for (size_t i = 0; i < 2 * FloppyDisk::SECTOR_SIZE; i++) {
             VGA::put_char(buffer[i]);
@@ -99,48 +109,46 @@ namespace Kernel {
         }
         VGA::put_string("Done!\n");
 
-        char** stringArray = (char**)kmalloc(sizeof(char*) * 4);
-        for (size_t i = 0; i < 4; i++) {
-            stringArray[i] = (char*)kmalloc(sizeof(char) * 6);
+        char** stringArray = new char*[4];
+        for (size_t i = 0; i < 3; i++) {
+            stringArray[i] = new char[2];
             stringArray[i][0] = 'A' + char(i);
             stringArray[i][1] = '\0';
         }
-        for (size_t i = 0; i < 4; i++) {
+        for (size_t i = 0; i < 3; i++) {
             VGA::put_string(stringArray[i]);
             VGA::new_line();
         }
 
         MemoryManager::print_heap_information();
 
-        for (size_t i = 0; i < 4; i++) {
-            kfree(stringArray[i]);
-        }
-
-        MemoryManager::print_heap_information();
-
-        //*
+        u32 i = 0;
+        char buffer[80 + 1] = {'\0'};
         while (true) {
             for (auto e = PS2::Keyboard::poll_event(); !e.is_error(); e = PS2::Keyboard::poll_event()) {
                 const auto event = e.get_value();
-                VGA::put_string(PS2::Keyboard::get_keycode_string(event.key));
+
                 if (event.event == PS2::Keyboard::KeyEvent::PRESSED) {
-                    VGA::put_string(" pressed\n");
-                }
-                else {
-                    VGA::put_string(" released\n");
+                    switch(event.key) {
+                        case PS2::Keyboard::Keycode::KEYCODE_BACKSPACE:
+                            i = (i > 0) ? (i - 1) : 0;
+                            buffer[i] = ' ';
+                            break;
+                        default: {
+                                const char c = PS2::Keyboard::get_keycode_char(event.key);
+                                if (i < 80 && c != '\0') {
+                                    buffer[i] = c;
+                                    i++;
+                                }
+                                break;
+                            }
+                    }
+                    VGA::clear_line();
+                    VGA::put_string(buffer);
                 }
             }
             KERNEL_HALT();
         }
-        //*/
-
-        /*
-        while (true) {
-            VGA::put_string("Sleeping Zzz...\n");
-            sleep(3000);
-            VGA::put_string("Woke up\n");
-        }
-        //*/
     }
 
 }

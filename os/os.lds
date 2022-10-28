@@ -1,4 +1,4 @@
-ENTRY(kernel_main)
+ENTRY(kernel_early_main)
 
 PHDRS {
     headers PT_PHDR PHDRS;
