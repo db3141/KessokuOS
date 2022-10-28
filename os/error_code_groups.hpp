@@ -3,14 +3,21 @@
 
 namespace Kernel::ErrorCodeGroup {
 
-    enum ErrorCodeGroup : int {
-        DATA_QUEUE = 0x00010000,
+    enum class Group : int {
+        GENERIC,
 
-        DRIVERS_DMA          = 0x00020000
-        DRIVERS_FLOPPY_DISK  = 0x00030000,
-        DRIVERS_PS2          = 0x00040000,
-        DRIVERS_PS2_KEYBOARD = 0x00050000,
+        DATA_QUEUE,
+        DATA_FC_VECTOR,
+
+        DRIVERS_DMA,
+        DRIVERS_FLOPPY_DISK,
+        DRIVERS_PS2,
+        DRIVERS_PS2_KEYBOARD,
     };
+
+    constexpr int get_id(Group t_group) {
+        return int(t_group) << ((8 * sizeof(int)) / 2);
+    }
 
 }
 

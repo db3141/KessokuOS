@@ -8,8 +8,8 @@
 namespace Kernel::DMA {
 
     enum Error : int {
-        ERROR_INVALID_CHANNEL = ErrorCodeGroup::DRIVERS_DMA,
-    }
+        ERROR_INVALID_CHANNEL = ErrorCodeGroup::get_id(ErrorCodeGroup::Group::DRIVERS_DMA)
+    };
 
     SZNN::ErrorOr<void> initialize_channel(u8 t_channel, void* t_bufferAddress, u16 t_count);
     SZNN::ErrorOr<void> set_mode(u8 t_channel, u8 t_transferType, bool t_autoInit, bool t_down, u8 t_mode);

@@ -57,10 +57,51 @@ namespace Kernel {
         asm volatile ("cli");
     }
 
-    void memcpy(void* t_dest, const void* t_src, size_t t_count) {
+    
+}
+
+void* memcpy(void* t_dest, const void* t_src, size_t t_count) {
+    for (size_t i = 0; i < t_count; i++) {
+        *(reinterpret_cast<unsigned char*>(t_dest) + i) = *(reinterpret_cast<const unsigned char*>(t_src) + i);
+    }
+
+    return t_dest;
+}
+
+void* memmove(void* t_dest, const void* t_src, size_t t_count) {
+    if (t_dest < t_src) {
+        return memcpy(t_dest, t_src, t_count);
+    }
+    else if (t_dest > t_src) {
         for (size_t i = 0; i < t_count; i++) {
-            *(reinterpret_cast<u8*>(t_dest) + i) = *(reinterpret_cast<const u8*>(t_src) + i);
+            const size_t offset = t_count - 1 - i;
+
+            *(reinterpret_cast<unsigned char*>(t_dest) + offset) = *(reinterpret_cast<const unsigned char*>(t_src) + offset);
+        }
+    }
+    return t_dest;
+}
+
+void* memset(void* t_dest, int t_ch, size_t t_count) {
+    for (size_t i = 0; i < t_count; i++) {
+        *(reinterpret_cast<unsigned char*>(t_dest) + i) = static_cast<unsigned char>(t_ch);
+    }
+    return t_dest;
+}
+
+int memcmp(const void* t_lhs, const void* t_rhs, size_t t_count) {
+    for (size_t i = 0; i < t_count; i++) {
+        const unsigned char leftByte = *(reinterpret_cast<const unsigned char*>(t_lhs) + i);
+        const unsigned char rightByte = *(reinterpret_cast<const unsigned char*>(t_rhs) + i);
+
+        if (leftByte < rightByte) {
+            return -1;
+        }
+        else if (leftByte > rightByte) {
+            return 1;
         }
     }
 
+    return 0;
 }
+

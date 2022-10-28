@@ -9,7 +9,7 @@
 namespace Kernel::FloppyDisk {
 
     enum Error : int {
-        ERROR_CONTROLLER_NOT_EXPECTING_WRITE = ErrorCodeGroup::DRIVERS_FLOPPY_DISK,
+        ERROR_CONTROLLER_NOT_EXPECTING_WRITE = ErrorCodeGroup::get_id(ErrorCodeGroup::Group::DRIVERS_FLOPPY_DISK),
         ERROR_CONTROLLER_NEEDS_RESET,
         ERROR_TIMEOUT,
         ERROR_UNSUPPORTED_VERSION,

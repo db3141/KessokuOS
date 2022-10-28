@@ -1,13 +1,16 @@
 #ifndef QUEUE_INCLUDED
 #define QUEUE_INCLUDED
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "error_code_groups.hpp"
 #include "sznnlib/error_or.hpp"
 
 namespace Kernel::Data {
 
     enum QueueErrorCode : int {
-        QUEUE_IS_FULL = ErrorCodeGroup::DATA_QUEUE,
+        QUEUE_IS_FULL = ErrorCodeGroup::get_id(ErrorCodeGroup::Group::DATA_QUEUE),
         QUEUE_IS_EMPTY,
     };
 

@@ -2,7 +2,7 @@ CXX=i686-elf-g++
 
 PWD=$(shell pwd)
 
-CXXFLAGS=-ffreestanding -nostdlib -ggdb -Wall -Wextra -mgeneral-regs-only -I$(PWD)
+CXXFLAGS=-ffreestanding -fno-builtin -nostdlib -ggdb -Wall -Wextra -mgeneral-regs-only -I$(PWD)
 LINK_FLAGS=-lgcc
 
 BUILD_DIR=../build/os
@@ -26,6 +26,8 @@ SOURCE_FILES=\
 	interrupts/idt.cpp\
 	interrupts/pic.cpp\
 	interrupts/interrupt_handler.cpp\
+	\
+	memory-manager/manager.cpp\
 
 HEADER_FILES=\
 	common.hpp\
@@ -40,7 +42,12 @@ HEADER_FILES=\
 	\
 	interrutps/idt.hpp\
 	interrupts/interrupt_handler.hpp\
-	interrupts/pic.hpp\ 
+	interrupts/pic.hpp\
+	\
+	memory-manager/manager.hpp\
+	\
+	data/queue.hpp\
+	data/fc_vector.hpp\
 
 
 OBJS=$(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SOURCE_FILES))
@@ -63,7 +70,7 @@ $(UNSTRIPPED_OUTPUT_FILE): $(OBJS)
 .PHONY: create_build_dir
 create_build_dir:
 	-mkdir $(BUILD_DIR)
-	-mkdir $(BUILD_DIR)/drivers $(BUILD_DIR)/interrupts
+	-mkdir $(BUILD_DIR)/drivers $(BUILD_DIR)/interrupts $(BUILD_DIR)/memory-manager
 
 .PHONY: clean
 clean:

@@ -29,8 +29,23 @@ namespace Kernel {
     void enable_interrupts();
     void disable_interrupts();
 
-    void memcpy(void* t_dest, const void* t_src, size_t t_count);
+    template <typename T>
+    constexpr T get_smallest_gte_multiple(T t_value, T t_multiple) {
+        if (t_value % t_multiple == 0) {
+            return t_value;
+        }
+        else {
+            return t_value + (t_multiple - (t_value % t_multiple));
+        }
+    }
+
 }
+
+extern "C" void* memcpy(void* t_dest, const void* t_src, size_t t_count);
+extern "C" void* memmove(void* t_dest, const void* t_src, size_t t_count);
+extern "C" void* memset(void* t_dest, int t_ch, size_t t_count);
+extern "C" int memcmp(const void* t_lhs, const void* t_rhs, size_t t_count);
+	
 
 #define KERNEL_HALT() asm("hlt")
 #define KERNEL_STOP() do {\

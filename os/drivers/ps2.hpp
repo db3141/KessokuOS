@@ -9,7 +9,7 @@
 namespace Kernel::PS2 {
 
     enum Error : int {
-        ERROR_INPUT_BUFFER_FULL = ErrorCodeGroup::DRIVERS_PS2,
+        ERROR_INPUT_BUFFER_FULL = ErrorCodeGroup::get_id(ErrorCodeGroup::Group::DRIVERS_PS2),
         ERROR_OUTPUT_BUFFER_EMPTY,
         ERROR_NO_RESPONSE,
         ERROR_RESEND_LIMIT_REACHED,

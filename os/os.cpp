@@ -8,48 +8,14 @@
 #include "drivers/ps2.hpp"
 #include "drivers/ps2_keyboard.hpp"
 #include "drivers/vga.hpp"
+#include "memory-manager/manager.hpp"
 
 namespace Kernel {
 
-    u64* const MEMORY_INFORMATION_TABLE = (u64*) 0x7000;
-
-    struct MemoryRange {
-        u32 baseAddress;
-        u32 regionLength;
-    };
-
-    struct MemoryRangeTable {
-        MemoryRange entries[32];
-        u32 entryCount;
-    };
-
-    static MemoryRangeTable MEMORY_USABLE_RANGE_TABLE;
-
-    void initialize_memory_range() {
-        MEMORY_USABLE_RANGE_TABLE.entryCount = 0;
-        for (u64* p = MEMORY_INFORMATION_TABLE; ; p += 3) {
-            // If we have reached the NULL entry or there is no more space in the table then stop
-            if ((p[0] == 0 && p[1] == 0 && p[2] == 0) || MEMORY_USABLE_RANGE_TABLE.entryCount >= 32) {
-                break;
-            }
-
-            const MemoryRange range = { static_cast<u32>(p[0] & 0xFFFFFFFF) , static_cast<u32>(p[1] & 0xFFFFFFFF) };
-            const u32 regionType = p[2] & 0xFFFFFFFF;
-            if (regionType == 1) {
-                MEMORY_USABLE_RANGE_TABLE.entries[MEMORY_USABLE_RANGE_TABLE.entryCount] = range;
-                MEMORY_USABLE_RANGE_TABLE.entryCount++;
-
-                VGA::put_hex(range.baseAddress);
-                VGA::put_char(' ');
-
-                VGA::put_hex(range.regionLength);
-                VGA::new_line();
-            }
-        }
-    }
-
     constexpr size_t STACK_SIZE = 8192;
     u32 g_stack[STACK_SIZE / sizeof(u32)];
+
+    extern "C" char _kernel_end[];
 
     extern "C" void kernel_main() {
         // Update the stack pointer
@@ -59,6 +25,10 @@ namespace Kernel {
 
         VGA::initialize();
         VGA::put_string("Hello World!\n\n");
+
+        VGA::put_string("Kernel End: ");
+        VGA::put_hex(int(_kernel_end));
+        VGA::new_line();
 
         VGA::put_string("Initializing PIC... ");
         PIC::initialize();
@@ -99,10 +69,6 @@ namespace Kernel {
         VGA::put_string("Enabling interrupts\n\n");
         enable_interrupts();
 
-        VGA::put_string("Memory Ranges\n---------------------\n");
-        initialize_memory_range();
-        VGA::new_line();
-
         VGA::put_string("Done!\n");
         VGA::put_hex(read_cmos(0x10));
         VGA::new_line();
@@ -119,10 +85,38 @@ namespace Kernel {
             VGA::put_string("Read failed :(\n");
             KERNEL_STOP();
         }
+        /*
         for (size_t i = 0; i < 2 * FloppyDisk::SECTOR_SIZE; i++) {
             VGA::put_char(buffer[i]);
         }
         VGA::new_line();
+        */
+
+        VGA::put_string("Intializing Memory Manager... ");
+        if (MemoryManager::initialize().is_error()) {
+            VGA::put_string("Failed :(\n");
+            KERNEL_STOP();
+        }
+        VGA::put_string("Done!\n");
+
+        char** stringArray = (char**)kmalloc(sizeof(char*) * 4);
+        for (size_t i = 0; i < 4; i++) {
+            stringArray[i] = (char*)kmalloc(sizeof(char) * 6);
+            stringArray[i][0] = 'A' + char(i);
+            stringArray[i][1] = '\0';
+        }
+        for (size_t i = 0; i < 4; i++) {
+            VGA::put_string(stringArray[i]);
+            VGA::new_line();
+        }
+
+        MemoryManager::print_heap_information();
+
+        for (size_t i = 0; i < 4; i++) {
+            kfree(stringArray[i]);
+        }
+
+        MemoryManager::print_heap_information();
 
         //*
         while (true) {

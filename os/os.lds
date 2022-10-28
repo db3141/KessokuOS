@@ -12,4 +12,6 @@ SECTIONS {
     .text BLOCK(4K) : ALIGN(4K) { *(.text) } :code 
     .data BLOCK(4K) : ALIGN(4K) { *(.data) } :data
     .bss BLOCK(4K) : ALIGN(4K) { *(.bss) } :uninitialized_data
+
+    _kernel_end = .;
 }

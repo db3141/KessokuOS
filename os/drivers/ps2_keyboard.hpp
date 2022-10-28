@@ -7,7 +7,7 @@
 namespace Kernel::PS2::Keyboard {
 
     enum Error : int {
-        ERROR_KEYBOARD_SELF_TEST_FAILED = ErrorCodeGroup::DRIVERS_PS2_KEYBOARD,
+        ERROR_KEYBOARD_SELF_TEST_FAILED = ErrorCodeGroup::get_id(ErrorCodeGroup::Group::DRIVERS_PS2_KEYBOARD),
         ERROR_KEYBOARD_RESEND_LIMIT_REACHED,
         ERROR_KEYBOARD_DEVICE_IS_NOT_A_KEYBOARD
     };
