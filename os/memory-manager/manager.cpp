@@ -42,6 +42,8 @@ namespace Kernel::MemoryManager {
     
 
     void initialize_memory_range();
+    size_t find_first_gte_free_block(size_t t_size);
+    void add_free_block(BlockHeader* t_block);
 
 
     SZNN::ErrorOr<void> initialize() {
@@ -61,25 +63,48 @@ namespace Kernel::MemoryManager {
 
     SZNN::ErrorOr<void*> malloc(size_t t_size) {
         const size_t paddedSize = get_smallest_gte_multiple(t_size, sizeof(u32));
+        BlockHeader* block = nullptr;
 
         if (s_memoryInfo.baseNode == nullptr) {
             s_memoryInfo.baseNode = reinterpret_cast<BlockHeader*>(HEAP_BASE_ADDRESS);
             s_memoryInfo.tailNode = s_memoryInfo.baseNode;
 
             *s_memoryInfo.baseNode = BlockHeader{ nullptr, nullptr, paddedSize, true };
+
+            block = s_memoryInfo.tailNode;
         }
         else {
-            ASSERT(s_memoryInfo.tailNode != nullptr, -1); // TODO: error code
+            const size_t freeBlockIndex = find_first_gte_free_block(paddedSize);
 
-            BlockHeader* newBlock = reinterpret_cast<BlockHeader*>(reinterpret_cast<u8*>(s_memoryInfo.tailNode) + sizeof(BlockHeader) + s_memoryInfo.tailNode->size);
+            if (freeBlockIndex < s_memoryInfo.freeBlocks.size()) {
+                block = s_memoryInfo.freeBlocks[freeBlockIndex];
+                block->used = true;
 
-            *newBlock = BlockHeader{ s_memoryInfo.tailNode, nullptr, paddedSize, true };
-            s_memoryInfo.tailNode->next = newBlock;
+                s_memoryInfo.freeBlocks.remove(freeBlockIndex);
 
-            s_memoryInfo.tailNode = newBlock;
+                if (block->size - paddedSize > sizeof(BlockHeader)) {
+                    BlockHeader* splitBlock = reinterpret_cast<BlockHeader*>(reinterpret_cast<u8*>(block) + sizeof(BlockHeader) + paddedSize);
+                    *splitBlock = BlockHeader{ block, block->next, block->size - paddedSize - sizeof(BlockHeader), false };
+
+                    block->size = paddedSize;
+                    block->next = splitBlock;
+
+                    add_free_block(splitBlock);
+                }
+
+            }
+            else {
+                ASSERT(s_memoryInfo.tailNode != nullptr, -1); // TODO: error code
+
+                block = reinterpret_cast<BlockHeader*>(reinterpret_cast<u8*>(s_memoryInfo.tailNode) + sizeof(BlockHeader) + s_memoryInfo.tailNode->size);
+                *block = BlockHeader{ s_memoryInfo.tailNode, nullptr, paddedSize, true };
+
+                s_memoryInfo.tailNode->next = block;
+                s_memoryInfo.tailNode = block;
+            }
         }
 
-        return reinterpret_cast<u8*>(s_memoryInfo.tailNode) + sizeof(BlockHeader);
+        return reinterpret_cast<u8*>(block) + sizeof(BlockHeader);
     }
 
     SZNN::ErrorOr<void> free(void* t_memory) {
@@ -89,28 +114,43 @@ namespace Kernel::MemoryManager {
 
         node->used = false;
 
+        add_free_block(node);
+
         return SZNN::ErrorOr<void>();
     }
 
     void print_heap_information() {
-        VGA::put_string("-------------------\n");
-        VGA::put_string("Heap Information\n");
+        VGA::put_string("Blocks\n");
+        VGA::put_string("------\n");
         for (const BlockHeader* node = s_memoryInfo.baseNode; node != nullptr; node = node->next) {
-            VGA::put_string("-------------------\n");
-
             VGA::put_string("Address: ");
             VGA::put_hex(int(node));
-            VGA::new_line();
+            VGA::put_string(", ");
 
             VGA::put_string("Size: ");
             VGA::put_unsigned_decimal(node->size);
-            VGA::new_line();
+            VGA::put_string(", ");
 
             VGA::put_string("Used: ");
             VGA::put_unsigned_decimal(node->used);
             VGA::new_line();
         }
-        VGA::put_string("-------------------\n");
+
+        VGA::put_string("\nFree Blocks\n");
+        VGA::put_string("------------\n");
+        for (size_t i = 0; i < s_memoryInfo.freeBlocks.size(); i++) {
+            VGA::put_string("Address: ");
+            VGA::put_hex(int(s_memoryInfo.freeBlocks[i]));
+            VGA::put_string(", ");
+
+            VGA::put_string("Size: ");
+            VGA::put_unsigned_decimal(s_memoryInfo.freeBlocks[i]->size);
+            VGA::put_string(", ");
+
+            VGA::put_string("Used: ");
+            VGA::put_unsigned_decimal(s_memoryInfo.freeBlocks[i]->used);
+            VGA::new_line();
+        }
     }
 
     void initialize_memory_range() {
@@ -128,6 +168,35 @@ namespace Kernel::MemoryManager {
                 s_memoryRangeTable.entryCount++;
             }
         }
+    }
+
+    size_t find_first_gte_free_block(size_t t_size) {
+        if (s_memoryInfo.freeBlocks.size() == 0 || t_size <= s_memoryInfo.freeBlocks[0]->size) {
+            return 0;
+        }
+
+        size_t start = 0;
+        size_t end = s_memoryInfo.freeBlocks.size();
+
+        size_t midpoint = (start + end) / 2;
+        while (start != midpoint) {
+            if (t_size > s_memoryInfo.freeBlocks[midpoint]->size) {
+                start = midpoint;
+            }
+            else {
+                end = midpoint;
+            }
+
+            midpoint = (start + end) / 2;
+        };
+
+        return end;
+    }
+
+    void add_free_block(BlockHeader* t_block) {
+        const size_t index = find_first_gte_free_block(t_block->size);
+
+        s_memoryInfo.freeBlocks.insert(index, t_block);
     }
 
 }

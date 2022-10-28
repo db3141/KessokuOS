@@ -35,6 +35,8 @@ namespace Kernel::Data {
 
             m_array[t_index] = t_value;
             m_size++;
+
+            return SZNN::ErrorOr<void>();
         }
 
         SZNN::ErrorOr<void> remove(size_t t_index) {
@@ -45,6 +47,8 @@ namespace Kernel::Data {
             }
 
             m_size--;
+
+            return SZNN::ErrorOr<void>();
         }
 
         SZNN::ErrorOr<void> push_back(const T& t_value) {

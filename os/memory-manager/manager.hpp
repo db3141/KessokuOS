@@ -22,7 +22,6 @@ namespace Kernel {
 
 }
 
-
 void* operator new(size_t t_size);
 void* operator new[](size_t t_size);
 

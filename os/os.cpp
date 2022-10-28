@@ -110,15 +110,22 @@ namespace Kernel {
         VGA::put_string("Done!\n");
 
         char** stringArray = new char*[4];
-        for (size_t i = 0; i < 3; i++) {
-            stringArray[i] = new char[2];
+        for (size_t i = 0; i < 4; i++) {
+            stringArray[i] = new char[32 * (i + 1)];
             stringArray[i][0] = 'A' + char(i);
             stringArray[i][1] = '\0';
         }
-        for (size_t i = 0; i < 3; i++) {
+        for (size_t i = 0; i < 4; i++) {
             VGA::put_string(stringArray[i]);
             VGA::new_line();
         }
+
+        delete[] stringArray[0];
+        delete[] stringArray[1];
+        delete[] stringArray[2];
+        delete[] stringArray[3];
+
+        char* test = new char[36];
 
         MemoryManager::print_heap_information();
 
