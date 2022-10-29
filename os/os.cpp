@@ -117,10 +117,6 @@ namespace Kernel {
             stringArray[i][0] = 'A' + char(i);
             stringArray[i][1] = '\0';
         }
-        for (size_t i = 0; i < 4; i++) {
-            VGA::put_string(stringArray[i]);
-            VGA::new_line();
-        }
 
         delete[] stringArray[0];
         delete[] stringArray[3];
@@ -128,8 +124,6 @@ namespace Kernel {
         delete[] stringArray[2];
         delete[] stringArray;
 
-        u32 i = 0;
-        char buffer[80 + 1] = {'\0'};
         while (true) {
             for (auto e = PS2::Keyboard::poll_event(); !e.is_error(); e = PS2::Keyboard::poll_event()) {
                 const auto event = e.get_value();
@@ -137,20 +131,16 @@ namespace Kernel {
                 if (event.event == PS2::Keyboard::KeyEvent::PRESSED) {
                     switch(event.key) {
                         case PS2::Keyboard::Keycode::KEYCODE_BACKSPACE:
-                            i = (i > 0) ? (i - 1) : 0;
-                            buffer[i] = ' ';
+                            VGA::put_string("\b \b");
                             break;
                         default: {
-                                const char c = PS2::Keyboard::get_keycode_char(event.key);
-                                if (i < 80 && c != '\0') {
-                                    buffer[i] = c;
-                                    i++;
-                                }
-                                break;
+                            const char c = PS2::Keyboard::get_keycode_char(event.key);
+                            if (VGA::get_cursor_pos().x < 79 && c != '\0') {
+                                VGA::put_char(c);
                             }
+                            break;
+                        }
                     }
-                    VGA::clear_line();
-                    VGA::put_string(buffer);
                 }
             }
             KERNEL_HALT();

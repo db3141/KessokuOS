@@ -12,6 +12,7 @@ namespace Kernel::MemoryManager {
     SZNN::ErrorOr<void*> malloc(size_t t_size);
     SZNN::ErrorOr<void> free(void* t_memory);
 
+    void print_memory_range_information();
     void print_heap_information();
 }
 
