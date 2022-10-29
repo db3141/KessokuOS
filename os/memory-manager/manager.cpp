@@ -44,64 +44,53 @@ namespace Kernel::MemoryManager {
     void initialize_memory_range();
     size_t find_first_gte_free_block(size_t t_size);
     void add_free_block(BlockHeader* t_block);
+    SZNN::ErrorOr<void> remove_free_block(BlockHeader* t_block);
 
 
     SZNN::ErrorOr<void> initialize() {
         initialize_memory_range();
-        s_memoryInfo = MemoryInfo { nullptr, nullptr, {} };
 
-        VGA::put_string("Kernel End: ");
-        VGA::put_hex(int(_kernel_end));
-        VGA::new_line();
+        BlockHeader* block = reinterpret_cast<BlockHeader*>(HEAP_BASE_ADDRESS);
+        *block = BlockHeader { nullptr, nullptr, 0, false };
 
-        VGA::put_string("Heap Start: ");
-        VGA::put_hex(int(HEAP_BASE_ADDRESS));
-        VGA::new_line();
+        for (size_t i = 0; i < 32; i++) {
+            const auto& entry = s_memoryRangeTable.entries[i];
+            const u32 startAddress = entry.baseAddress;
+            const u32 endAddress = startAddress + entry.regionLength;
+
+            if (startAddress <= u32(HEAP_BASE_ADDRESS) && u32(HEAP_BASE_ADDRESS) < endAddress) {
+                block->size = endAddress - startAddress - sizeof(BlockHeader);
+                break;
+            }
+        }
+
+        s_memoryInfo = MemoryInfo { block, block, {} };
+        s_memoryInfo.freeBlocks.push_back(block);
 
         return SZNN::ErrorOr<void>();
     }
 
     SZNN::ErrorOr<void*> malloc(size_t t_size) {
+        ASSERT(s_memoryInfo.baseNode != nullptr, -1); // TODO: error code
+
         const size_t paddedSize = get_smallest_gte_multiple(t_size, sizeof(u32));
-        BlockHeader* block = nullptr;
+        const size_t freeBlockIndex = find_first_gte_free_block(paddedSize);
 
-        if (s_memoryInfo.baseNode == nullptr) {
-            s_memoryInfo.baseNode = reinterpret_cast<BlockHeader*>(HEAP_BASE_ADDRESS);
-            s_memoryInfo.tailNode = s_memoryInfo.baseNode;
+        ASSERT(freeBlockIndex < s_memoryInfo.freeBlocks.size(), -1); // TODO: error code
 
-            *s_memoryInfo.baseNode = BlockHeader{ nullptr, nullptr, paddedSize, true };
+        BlockHeader* block = s_memoryInfo.freeBlocks[freeBlockIndex];
+        s_memoryInfo.freeBlocks.remove(freeBlockIndex);
 
-            block = s_memoryInfo.tailNode;
-        }
-        else {
-            const size_t freeBlockIndex = find_first_gte_free_block(paddedSize);
+        block->used = true;
 
-            if (freeBlockIndex < s_memoryInfo.freeBlocks.size()) {
-                block = s_memoryInfo.freeBlocks[freeBlockIndex];
-                block->used = true;
+        if (block->size - paddedSize > sizeof(BlockHeader)) {
+            BlockHeader* splitBlock = reinterpret_cast<BlockHeader*>(reinterpret_cast<u8*>(block) + sizeof(BlockHeader) + paddedSize);
+            *splitBlock = BlockHeader{ block, block->next, block->size - paddedSize - sizeof(BlockHeader), false };
 
-                s_memoryInfo.freeBlocks.remove(freeBlockIndex);
+            block->size = paddedSize;
+            block->next = splitBlock;
 
-                if (block->size - paddedSize > sizeof(BlockHeader)) {
-                    BlockHeader* splitBlock = reinterpret_cast<BlockHeader*>(reinterpret_cast<u8*>(block) + sizeof(BlockHeader) + paddedSize);
-                    *splitBlock = BlockHeader{ block, block->next, block->size - paddedSize - sizeof(BlockHeader), false };
-
-                    block->size = paddedSize;
-                    block->next = splitBlock;
-
-                    add_free_block(splitBlock);
-                }
-
-            }
-            else {
-                ASSERT(s_memoryInfo.tailNode != nullptr, -1); // TODO: error code
-
-                block = reinterpret_cast<BlockHeader*>(reinterpret_cast<u8*>(s_memoryInfo.tailNode) + sizeof(BlockHeader) + s_memoryInfo.tailNode->size);
-                *block = BlockHeader{ s_memoryInfo.tailNode, nullptr, paddedSize, true };
-
-                s_memoryInfo.tailNode->next = block;
-                s_memoryInfo.tailNode = block;
-            }
+            add_free_block(splitBlock);
         }
 
         return reinterpret_cast<u8*>(block) + sizeof(BlockHeader);
@@ -113,6 +102,30 @@ namespace Kernel::MemoryManager {
         ASSERT(node->used == true, -1); // TODO: error code
 
         node->used = false;
+
+        if (node->next != nullptr && node->next->used == false) {
+            TRY(remove_free_block(node->next));
+
+            node->size += node->next->size + sizeof(BlockHeader);
+            node->next = node->next->next;
+            
+            if (node->next != nullptr) {
+                node->next->prev = node;
+            }
+        }
+
+        if (node->prev != nullptr && node->prev->used == false) {
+            TRY(remove_free_block(node->prev));
+
+            node->prev->size += node->size + sizeof(BlockHeader);
+            node->prev->next = node->next;
+            
+            if (node->next != nullptr) {
+                node->next->prev = node->prev;
+            }
+
+            node = node->prev;
+        }
 
         add_free_block(node);
 
@@ -199,6 +212,20 @@ namespace Kernel::MemoryManager {
         s_memoryInfo.freeBlocks.insert(index, t_block);
     }
 
+    // TODO: improve the efficiency of this (e.g. second binary search over the addresses)
+    SZNN::ErrorOr<void> remove_free_block(BlockHeader* t_block) {
+        const size_t startIndex = find_first_gte_free_block(t_block->size);
+
+        for (size_t i = startIndex; i < s_memoryInfo.freeBlocks.size() && t_block->size == s_memoryInfo.freeBlocks[i]->size; i++) {
+            if (t_block == s_memoryInfo.freeBlocks[i]) {
+                s_memoryInfo.freeBlocks.remove(i);
+                return SZNN::ErrorOr<void>();
+            }
+        }
+
+        ASSERT(false, -1); // TODO: error code
+    }
+
 }
 
 namespace Kernel {
@@ -206,7 +233,10 @@ namespace Kernel {
     void* kmalloc(size_t t_size) {
         SZNN::ErrorOr<void*> result = Kernel::MemoryManager::malloc(t_size);
         if (result.is_error()) {
-            VGA::put_string("Failed to allocate memory\n");
+            MemoryManager::print_heap_information();
+            VGA::put_string("Failed to allocate memory of size: ");
+            VGA::put_unsigned_decimal(t_size);
+            VGA::new_line();
             KERNEL_STOP();
         }
         
@@ -217,7 +247,10 @@ namespace Kernel {
         SZNN::ErrorOr<void> result = Kernel::MemoryManager::free(t_memory);
 
         if (result.is_error()) {
-            VGA::put_string("Failed to free memory\n");
+            MemoryManager::print_heap_information();
+            VGA::put_string("Failed to free address: ");
+            VGA::put_hex(int(t_memory));
+            VGA::new_line();
             KERNEL_STOP();
         }
     }

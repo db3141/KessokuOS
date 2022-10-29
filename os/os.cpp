@@ -109,6 +109,8 @@ namespace Kernel {
         }
         VGA::put_string("Done!\n");
 
+        MemoryManager::print_heap_information();
+
         char** stringArray = new char*[4];
         for (size_t i = 0; i < 4; i++) {
             stringArray[i] = new char[32 * (i + 1)];
@@ -121,13 +123,10 @@ namespace Kernel {
         }
 
         delete[] stringArray[0];
+        delete[] stringArray[3];
         delete[] stringArray[1];
         delete[] stringArray[2];
-        delete[] stringArray[3];
-
-        char* test = new char[36];
-
-        MemoryManager::print_heap_information();
+        delete[] stringArray;
 
         u32 i = 0;
         char buffer[80 + 1] = {'\0'};
