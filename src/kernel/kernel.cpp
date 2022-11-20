@@ -60,7 +60,7 @@ namespace Kernel {
         VGA::put_string("Initializing PS/2 Controller... ");
         const auto errorOr = PS2::initialize();
         if (errorOr.is_error()) {
-            VGA::put_hex(errorOr.get_error());
+            VGA::put_string(get_error_string(errorOr.get_error()));
             VGA::put_string(" Failed :(\n");
             KERNEL_STOP();
         }

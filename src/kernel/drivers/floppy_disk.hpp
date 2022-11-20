@@ -2,23 +2,12 @@
 #define FLOPPY_DISK_INCLUDED
 
 #include "common.hpp"
-#include "error_code_groups.hpp"
-#include "interrupts/interrupt_handler.hpp"
 #include "data/error_or.hpp"
+#include "interrupts/interrupt_handler.hpp"
 
 namespace Kernel::FloppyDisk {
 
-    enum Error : int {
-        ERROR_CONTROLLER_NOT_EXPECTING_WRITE = ErrorCodeGroup::get_id(ErrorCodeGroup::Group::DRIVERS_FLOPPY_DISK),
-        ERROR_CONTROLLER_NEEDS_RESET,
-        ERROR_TIMEOUT,
-        ERROR_UNSUPPORTED_VERSION,
-        ERROR_LOCK_FAILED,
-        ERROR_INVALID_DRIVE,
-        ERROR_INVALID_PARAMETER,
-        ERROR_COMMAND_FAILED
-    };
-
+    // TODO: move this into floppy_disk.cpp
     constexpr size_t SECTOR_SIZE = 512;
     
     Data::ErrorOr<void> initialize();

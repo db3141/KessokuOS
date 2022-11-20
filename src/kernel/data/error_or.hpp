@@ -1,18 +1,20 @@
 #ifndef DATA_ERROR_OR_INCLUDED
 #define DATA_ERROR_OR_INCLUDED
 
+#include "error.hpp"
+
 namespace Kernel::Data {
 
     // Thanks SerenityOS for the idea!
 
-    template<typename Ty, typename Error=int>
+    template<typename Ty, typename ErrorTy=Error>
     class ErrorOr {
     public:
         ErrorOr(Ty t_value) : m_isError(false) {
             m_contained.val = t_value;
         }
 
-        ErrorOr(Error t_error) : m_isError(true) {
+        ErrorOr(ErrorTy t_error) : m_isError(true) {
             m_contained.err = t_error;
         }
 
@@ -24,26 +26,26 @@ namespace Kernel::Data {
             return m_contained.val;
         }
 
-        [[nodiscard]] Error get_error() const {
+        [[nodiscard]] ErrorTy get_error() const {
             return m_contained.err;
         }
 
     private:
         union {
             Ty val;
-            Error err;
+            ErrorTy err;
         } m_contained;
         bool m_isError;
     };
 
-    template<typename Error>
-    class ErrorOr<void, Error> {
+    template<typename ErrorTy>
+    class ErrorOr<void, ErrorTy> {
     public:
         ErrorOr() : m_isError(false) {
             ;
         }
 
-        ErrorOr(Error t_error) : m_error(t_error), m_isError(true) {
+        ErrorOr(ErrorTy t_error) : m_error(t_error), m_isError(true) {
             ;
         }
 
@@ -55,12 +57,12 @@ namespace Kernel::Data {
             ;
         }
 
-        [[nodiscard]] Error get_error() const {
+        [[nodiscard]] ErrorTy get_error() const {
             return m_error;
         }
 
     private:
-        Error m_error;
+        ErrorTy m_error;
         bool m_isError;
     };
 

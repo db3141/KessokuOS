@@ -10,7 +10,7 @@ namespace Kernel::PIT {
         PORT_CHANNEL_0 = 0x40,
         PORT_CHANNEL_1 = 0x41,
         PORT_CHANNEL_2 = 0x42,
-        PORT_COMMAND_REGISTER = 0x43
+        PORT_COMMAND_REGISTER = 0x43,
     };
 
     constexpr Port get_port(Channel t_channel) {

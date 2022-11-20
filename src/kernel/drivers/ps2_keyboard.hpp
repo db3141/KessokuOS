@@ -1,16 +1,10 @@
 #ifndef PS2_KEYBOARD_INCLUDED
 #define PS2_KEYBOARD_INCLUDED
 
-#include "error_code_groups.hpp"
+#include "common.hpp"
 #include "data/error_or.hpp"
 
 namespace Kernel::PS2::Keyboard {
-
-    enum Error : int {
-        ERROR_KEYBOARD_SELF_TEST_FAILED = ErrorCodeGroup::get_id(ErrorCodeGroup::Group::DRIVERS_PS2_KEYBOARD),
-        ERROR_KEYBOARD_RESEND_LIMIT_REACHED,
-        ERROR_KEYBOARD_DEVICE_IS_NOT_A_KEYBOARD
-    };
 
     enum Keycode : u8 {
         KEYCODE_ESCAPE = 0b000'00000,

@@ -2,7 +2,6 @@
 #define KERNEL_MEMORY_MANAGER_INCLUDED
 
 #include "common.hpp"
-#include "error_code_groups.hpp"
 #include "data/error_or.hpp"
 
 namespace Kernel::MemoryManager {

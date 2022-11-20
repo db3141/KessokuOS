@@ -42,7 +42,7 @@ namespace Kernel::DMA {
     };
 
     Data::ErrorOr<u8> get_start_address_port(u8 t_channel) {
-        ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
+        ASSERT(t_channel < 8, Error::INDEX_OUT_OF_RANGE);
 
         const u8 REGISTERS[8] = {
             START_ADDR_REG_0,
@@ -59,7 +59,7 @@ namespace Kernel::DMA {
     }
 
     Data::ErrorOr<u8> get_page_address_port(u8 t_channel) {
-        ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
+        ASSERT(t_channel < 8, Error::INDEX_OUT_OF_RANGE);
 
         const u8 REGISTERS[8] = {
             PAGE_ADDR_REG_0,
@@ -76,7 +76,7 @@ namespace Kernel::DMA {
     }
 
     Data::ErrorOr<u8> get_count_port(u8 t_channel) {
-        ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
+        ASSERT(t_channel < 8, Error::INDEX_OUT_OF_RANGE);
 
         const u8 REGISTERS[8] = {
             COUNT_REG_0,
@@ -93,17 +93,17 @@ namespace Kernel::DMA {
     }
 
     Data::ErrorOr<u8> get_single_channel_mask(u8 t_channel) {
-        ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
+        ASSERT(t_channel < 8, Error::INDEX_OUT_OF_RANGE);
         return (t_channel < 4) ? (SINGLE_CHANNEL_MASK_REG_0_3) : (SINGLE_CHANNEL_MASK_REG_4_7);
     }
 
     Data::ErrorOr<u8> get_flip_flop_reset(u8 t_channel) {
-        ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
+        ASSERT(t_channel < 8, Error::INDEX_OUT_OF_RANGE);
         return (t_channel < 4) ? (FLIP_FLOP_RESET_REG_0_3) : (FLIP_FLOP_RESET_REG_4_7);
     }
 
     Data::ErrorOr<u8> get_mode(u8 t_channel) {
-        ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
+        ASSERT(t_channel < 8, Error::INDEX_OUT_OF_RANGE);
         return (t_channel < 4) ? (MODE_REG_0_3) : (MODE_REG_4_7);
     }
 

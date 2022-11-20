@@ -1,18 +1,10 @@
 #ifndef FIXED_CAPACITY_VECTOR_INCLUDED
 #define FIXED_CAPACITY_VECTOR_INCLUDED
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include "error_code_groups.hpp"
+#include "common.hpp"
 #include "data/error_or.hpp"
 
 namespace Kernel::Data {
-
-    enum FCVectorErrorCode : int {
-        FC_VECTOR_INVALID_INDEX = ErrorCodeGroup::get_id(ErrorCodeGroup::Group::DATA_FC_VECTOR),
-        FC_VECTOR_IS_FULL
-    };
 
     template <typename T, size_t CAPACITY>
     class FCVector {
@@ -22,8 +14,8 @@ namespace Kernel::Data {
         }
 
         Data::ErrorOr<void> insert(size_t t_index, const T& t_value) {
-            ASSERT(t_index <= m_size, FC_VECTOR_INVALID_INDEX);
-            ASSERT(m_size < CAPACITY, FC_VECTOR_IS_FULL);
+            ASSERT(t_index <= m_size, Error::INDEX_OUT_OF_RANGE);
+            ASSERT(m_size < CAPACITY, Error::CONTAINER_IS_FULL);
 
             if (t_index < m_size) { 
                 for (size_t i = m_size - 1; i > t_index; i--) {
@@ -40,7 +32,7 @@ namespace Kernel::Data {
         }
 
         Data::ErrorOr<void> remove(size_t t_index) {
-            ASSERT(t_index < m_size, FC_VECTOR_INVALID_INDEX);
+            ASSERT(t_index < m_size, Error::INDEX_OUT_OF_RANGE);
 
             for (size_t i = t_index; i < m_size; i++) {
                 m_array[i] = m_array[i + 1];

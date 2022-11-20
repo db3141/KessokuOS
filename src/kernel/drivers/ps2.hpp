@@ -1,25 +1,11 @@
 #ifndef PS2_INCLUDED
 #define PS2_INCLUDED
 
-#include "error_code_groups.hpp"
 #include "data/error_or.hpp"
 
 #include "interrupts/interrupt_handler.hpp"
 
 namespace Kernel::PS2 {
-
-    enum Error : int {
-        ERROR_INPUT_BUFFER_FULL = ErrorCodeGroup::get_id(ErrorCodeGroup::Group::DRIVERS_PS2),
-        ERROR_OUTPUT_BUFFER_EMPTY,
-        ERROR_NO_RESPONSE,
-        ERROR_RESEND_LIMIT_REACHED,
-
-        ERROR_UNKNOWN_DEVICE_TYPE,
-
-        ERROR_DEVICE_SELF_TEST_FAILED,
-        ERROR_DEVICE1_INTERFACE_TEST_FAILED,
-        ERROR_DEVICE2_INTERFACE_TEST_FAILED,
-    };
 
     enum class DeviceType {
         AT_KEYBOARD,
@@ -44,6 +30,8 @@ namespace Kernel::PS2 {
                 return "MF2 Keyboard with Translation Enabled";
             case DeviceType::MF2_KEYBOARD:
                 return "MF2 Keyboard";
+            default:
+                return nullptr;
         }
     }
 

@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "error.hpp"
+
 namespace Kernel {
 
     using s8 = int8_t;

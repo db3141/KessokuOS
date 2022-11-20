@@ -7,7 +7,7 @@
 
 namespace Kernel::PS2::Keyboard {
     
-    constexpr u32 SEND_COMMAND_RESPONSE_RESEND_LIMIT = 3;
+    constexpr size_t SEND_COMMAND_RETRY_LIMIT = 3;
     constexpr size_t KEYBOARD_EVENT_QUEUE_SIZE = 32;
 
     static bool KEYBOARD_KEY_STATE[256] = {0};
@@ -43,14 +43,14 @@ namespace Kernel::PS2::Keyboard {
             VGA::put_char('\'');
             VGA::put_string(device_type_string(type));
             VGA::put_string("' is not a keyboard\n");
-            return ERROR_KEYBOARD_DEVICE_IS_NOT_A_KEYBOARD;
+            return Error::DRIVER_INVALID_DEVICE;
         }
         
         TRY(resend_until_success_or_timeout(COMMAND_RESET_AND_SELF_TEST));
 
         const auto selfTestResult = TRY(get_response());
         if (selfTestResult != 0xAA) {
-            return ERROR_KEYBOARD_SELF_TEST_FAILED;
+            return Error::DRIVER_DEVICE_CHECK_FAILED;
         }
         TRY(resend_until_success_or_timeout(COMMAND_ENABLE_SCANNING));
 
@@ -62,7 +62,7 @@ namespace Kernel::PS2::Keyboard {
     }
 
     Data::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command) {
-        for (u32 i = 0; i < 3; i++) {
+        for (size_t i = 0; i < SEND_COMMAND_RETRY_LIMIT; i++) {
             TRY(send_to_device(t_command));
 
             const u8 response = TRY(get_response());
@@ -71,7 +71,7 @@ namespace Kernel::PS2::Keyboard {
             }
         }
 
-        return ERROR_KEYBOARD_RESEND_LIMIT_REACHED;
+        return Error::RETRY_LIMIT_REACHED;
     }
 
     Keycode parse_scancode(KeyEvent& r_event) {
@@ -659,7 +659,10 @@ namespace Kernel::PS2::Keyboard {
         const Keycode keycode = parse_scancode(event);
 
         if (keycode != KEYCODE_UNKNOWN) {
-            KEYBOARD_EVENT_QUEUE.push_back({keycode, event});
+            // compiler complains without this being in a lambda
+            [&](){
+                KEYBOARD_EVENT_QUEUE.push_back({keycode, event});
+            }();
             KEYBOARD_KEY_STATE[keycode] = (event == KeyEvent::PRESSED);
         }
 

@@ -1,18 +1,10 @@
 #ifndef QUEUE_INCLUDED
 #define QUEUE_INCLUDED
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include "error_code_groups.hpp"
+#include "common.hpp"
 #include "data/error_or.hpp"
 
 namespace Kernel::Data {
-
-    enum QueueErrorCode : int {
-        QUEUE_IS_FULL = ErrorCodeGroup::get_id(ErrorCodeGroup::Group::DATA_QUEUE),
-        QUEUE_IS_EMPTY,
-    };
 
     template <typename T, size_t SIZE>
     class Queue {
@@ -29,18 +21,18 @@ namespace Kernel::Data {
             ;
         }
 
-        int push_back(T t_element) {
+        Data::ErrorOr<void> push_back(T t_element) {
             if (is_full()) {
-                return QUEUE_IS_FULL;
+                return Error::CONTAINER_IS_FULL;
             }
             m_data[m_endIndex] = t_element;
             m_endIndex = next_position(m_endIndex);
-            return 0;
+            return Data::ErrorOr<void>();
         }
         
         Data::ErrorOr<T> pop_front() {
             if (is_empty()) {
-                return QUEUE_IS_EMPTY;
+                return Error::CONTAINER_IS_EMPTY;
             }
 
             const T result = m_data[m_startIndex];

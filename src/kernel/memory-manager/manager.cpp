@@ -64,13 +64,14 @@ namespace Kernel::MemoryManager {
             const u32 startAddress = entry.baseAddress;
             const u32 endAddress = startAddress + entry.regionLength;
 
-            if (startAddress <= u32(HEAP_BASE_ADDRESS) && u32(HEAP_BASE_ADDRESS) < endAddress) {
+            // TODO: change this to use more than one memory region
+            if (startAddress <= reinterpret_cast<u32>(HEAP_BASE_ADDRESS) && reinterpret_cast<u32>(HEAP_BASE_ADDRESS) < endAddress) {
                 memEndAddress = reinterpret_cast<u8*>(endAddress);
                 break;
             }
         }
 
-        ASSERT(memEndAddress != nullptr, -1); // TODO: error code
+        ASSERT(memEndAddress != nullptr, Error::MEMORY_MANAGER_FAILED_TO_FIND_MEMORY_REGION);
 
         s_memoryInfo = MemoryInfo { block, block, memEndAddress, {} };
         s_memoryInfo.freeBlocks.push_back(block);
@@ -79,13 +80,13 @@ namespace Kernel::MemoryManager {
     }
 
     Data::ErrorOr<void*> malloc(size_t t_size) {
-        ASSERT(t_size != 0, -1); // TODO: error code
-        ASSERT(s_memoryInfo.baseNode != nullptr, -1); // TODO: error code
+        ASSERT(t_size != 0, Error::INVALID_ARGUMENT);
+        ASSERT(s_memoryInfo.baseNode != nullptr, Error::UNINITIALIZED);
 
         const size_t paddedSize = get_smallest_gte_multiple(t_size, sizeof(u32));
         const size_t freeBlockIndex = find_first_gte_free_block(paddedSize);
 
-        ASSERT(freeBlockIndex < s_memoryInfo.freeBlocks.size(), -1); // TODO: error code
+        ASSERT(freeBlockIndex < s_memoryInfo.freeBlocks.size(), Error::MEMORY_MANAGER_NO_FREE_BLOCKS);
 
         BlockHeader* block = s_memoryInfo.freeBlocks[freeBlockIndex];
         s_memoryInfo.freeBlocks.remove(freeBlockIndex);
@@ -111,7 +112,7 @@ namespace Kernel::MemoryManager {
 
         BlockHeader* node = reinterpret_cast<BlockHeader*>(reinterpret_cast<u8*>(t_memory) - sizeof(BlockHeader));
 
-        ASSERT(node->used == true, -1); // TODO: error code
+        ASSERT(node->used == true, Error::INVALID_ARGUMENT);
 
         node->used = false;
 
@@ -251,7 +252,7 @@ namespace Kernel::MemoryManager {
             }
         }
 
-        ASSERT(false, -1); // TODO: error code
+        return Data::ErrorOr<void>(Error::INDEX_OUT_OF_RANGE);
     }
 
     size_t get_block_size(const BlockHeader* t_block) {

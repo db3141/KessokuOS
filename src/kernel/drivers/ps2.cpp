@@ -55,7 +55,7 @@ namespace Kernel::PS2 {
         port_write_byte(COMMAND_REGISTER_PORT, PERFORM_SELF_TEST);
         if (TRY(get_response()) != 0x55) {
             VGA::put_string("PS2: Self test failed\n");
-            return ERROR_DEVICE_SELF_TEST_FAILED;
+            return Error::DRIVER_DEVICE_CHECK_FAILED;
         }
 
         port_write_byte(COMMAND_REGISTER_PORT, WRITE_CONTROLLER_CONFIG_BYTE);
@@ -66,7 +66,7 @@ namespace Kernel::PS2 {
         port_write_byte(COMMAND_REGISTER_PORT, TEST_FIRST_PS2_PORT);
         if (TRY(get_response()) != 0x00) {
             VGA::put_string("PS2: first device interface test failed\n");
-            return ERROR_DEVICE1_INTERFACE_TEST_FAILED;
+            return Error::DRIVER_DEVICE_CHECK_FAILED;
         }
         io_wait();
 
@@ -74,7 +74,7 @@ namespace Kernel::PS2 {
             port_write_byte(COMMAND_REGISTER_PORT, TEST_SECOND_PS2_PORT);
             if (TRY(get_response()) != 0x00) {
                 VGA::put_string("PS2: second device interface test failed\n");
-                return ERROR_DEVICE2_INTERFACE_TEST_FAILED;
+                return Error::DRIVER_DEVICE_CHECK_FAILED;
             }
             io_wait();
         }
@@ -103,7 +103,7 @@ namespace Kernel::PS2 {
     Data::ErrorOr<void> send_to_device_immediate(u8 t_command) {
         const u8 status = port_read_byte(STATUS_REGISTER_PORT);
         if (status & 0x02) {
-            return ERROR_INPUT_BUFFER_FULL;
+            return Error::CONTAINER_IS_FULL;
         }
         else {
             port_write_byte(DATA_PORT, t_command);
@@ -124,7 +124,7 @@ namespace Kernel::PS2 {
 
         // If there is no response then return error
         if (!(status & 0x01)) {
-            return ERROR_NO_RESPONSE;
+            return Error::DRIVER_DEVICE_NO_RESPONSE;
         }
 
         return port_read_byte(DATA_PORT);
@@ -144,7 +144,7 @@ namespace Kernel::PS2 {
 
         const auto b1OrError = get_response(); // get response first byte
         if (b1OrError.is_error()) {
-            if (b1OrError.get_error() == ERROR_NO_RESPONSE) {
+            if (b1OrError.get_error() == Error::DRIVER_DEVICE_NO_RESPONSE) {
                 return DeviceType::AT_KEYBOARD;
             }
             else {
@@ -164,7 +164,7 @@ namespace Kernel::PS2 {
         }
 
         if (b1 != 0xAB) {
-            return ERROR_UNKNOWN_DEVICE_TYPE;
+            return Error::DRIVER_DEVICE_UNKNOWN;
         }
 
         const u8 b2 = TRY(get_response());
@@ -174,10 +174,11 @@ namespace Kernel::PS2 {
             case 0x83:
                 return DeviceType::MF2_KEYBOARD;
             default:
-                return ERROR_UNKNOWN_DEVICE_TYPE;
+                return Error::DRIVER_DEVICE_UNKNOWN;
         }
     }
 
+    // TODO: implement this
     /*
     Data::ErrorOr<DeviceType> get_second_port_device_type() {
 
@@ -193,7 +194,7 @@ namespace Kernel::PS2 {
                 return response; // if not a resend response then return
             }
         }
-        return ERROR_RESEND_LIMIT_REACHED;
+        return Error::RETRY_LIMIT_REACHED;
     }
 
 }

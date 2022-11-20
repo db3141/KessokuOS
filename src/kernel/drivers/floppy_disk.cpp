@@ -95,7 +95,7 @@ namespace Kernel::FloppyDisk {
 
     template <typename T, typename ...Ts>
     Data::ErrorOr<void> set_parameters(size_t t_index, T t_parameter, Ts... t_rest) {
-        ASSERT(t_index < PARAMETER_BUFFER_SIZE, ERROR_INVALID_PARAMETER);
+        ASSERT(t_index < PARAMETER_BUFFER_SIZE, Error::INVALID_ARGUMENT);
         s_parameterBytes[t_index] = t_parameter;
 
         return set_parameters(t_index + 1, t_rest...);
@@ -112,7 +112,7 @@ namespace Kernel::FloppyDisk {
             }
         }
 
-        return ERROR_TIMEOUT;
+        return Error::TIMED_OUT;
     }
 
     constexpr size_t get_parameter_count(Command t_command) {
@@ -231,7 +231,7 @@ namespace Kernel::FloppyDisk {
         s_floppyState.diskMotorOn[3] = false;
 
         TRY(execute_command(COMMAND_VERSION));
-        ASSERT(s_resultBytes[0] == 0x90, ERROR_UNSUPPORTED_VERSION);
+        ASSERT(s_resultBytes[0] == 0x90, Error::NOT_IMPLEMENTED); // TODO: possibly implement other versions
 
         TRY(execute_command(COMMAND_CONFIGURE, 0x00, 0x57, 0x00)); // Implied seek on, FIFO on, drive polling mode off, threshold = 8 (7 + 1)
         TRY(execute_command(COMMAND_LOCK));
@@ -260,7 +260,7 @@ namespace Kernel::FloppyDisk {
     }
 
     Data::ErrorOr<void> read_data(u8 t_drive, size_t t_lba, size_t t_count, u8* r_buffer) {
-        ASSERT(t_count > 0, ERROR_INVALID_PARAMETER);
+        ASSERT(t_count > 0, Error::INVALID_ARGUMENT);
 
         const CHSAddress startAddress = lbaToCHS(t_lba);
         const CHSAddress endAddress = lbaToCHS(t_lba + t_count);
@@ -324,7 +324,7 @@ namespace Kernel::FloppyDisk {
     Data::ErrorOr<void> send_command(Command t_command) {
         // Send command byte
         u8 msr = port_read_byte(MAIN_STATUS_REGISTER);
-        ASSERT((msr & 0xc0) == 0x80, ERROR_CONTROLLER_NEEDS_RESET); // Check that RQM = 1 and DIO = 0
+        ASSERT((msr & 0xc0) == 0x80, Error::DRIVER_DEVICE_NEEDS_RESET); // Check that RQM = 1 and DIO = 0
 
         port_write_byte(DATA_FIFO, t_command); // TODO: add check that command is valid
 
@@ -335,7 +335,7 @@ namespace Kernel::FloppyDisk {
 
         for (size_t i = 0; i < get_parameter_count(t_command); i++) {
             msr = TRY(read_msr_until_rqm());
-            ASSERT((msr & 0xc0) == 0x80, ERROR_COMMAND_FAILED);
+            ASSERT((msr & 0xc0) == 0x80, Error::DRIVER_COMMAND_FAILED);
 
             port_write_byte(DATA_FIFO, s_parameterBytes[i]);
         }
@@ -350,19 +350,19 @@ namespace Kernel::FloppyDisk {
             for (size_t i = 0; i < resultByteCount - 1; i++) {
                 s_resultBytes[i] = port_read_byte(DATA_FIFO);
                 msr = TRY(read_msr_until_rqm());
-                ASSERT((msr & 0x50) == 0x50, ERROR_COMMAND_FAILED);
+                ASSERT((msr & 0x50) == 0x50, Error::DRIVER_COMMAND_FAILED);
             }
 
             s_resultBytes[resultByteCount - 1] = port_read_byte(DATA_FIFO);
             msr = TRY(read_msr_until_rqm());
-            ASSERT((msr & 0x50) == 0x00, ERROR_COMMAND_FAILED);
+            ASSERT((msr & 0x50) == 0x00, Error::DRIVER_COMMAND_FAILED);
         }
 
         return Data::ErrorOr<void>();
     }
 
     Data::ErrorOr<void> select_drive(u8 t_drive, bool t_motorOn) {
-        ASSERT(t_drive < 4, ERROR_INVALID_PARAMETER);
+        ASSERT(t_drive < 4, Error::INDEX_OUT_OF_RANGE);
 
         if (s_floppyState.currentDrive != t_drive) {
             port_write_byte(CONFIGURATION_CONTROL_REGISTER, 0); // set to 0 for 1.44MiB floppy
@@ -389,7 +389,7 @@ namespace Kernel::FloppyDisk {
                 return msr;
             }
         }
-        return ERROR_TIMEOUT;
+        return Error::RETRY_LIMIT_REACHED;
     }
 
     Data::ErrorOr<void> wait_for_irq() {
@@ -401,7 +401,7 @@ namespace Kernel::FloppyDisk {
             KERNEL_HALT();
         }
 
-        return ERROR_TIMEOUT;
+        return Error::TIMED_OUT;
     }
 
     void floppy_handler(InterruptHandler::InterruptFrame* t_frame) {

@@ -31,6 +31,7 @@ SOURCE_FILES=\
 
 HEADER_FILES=\
 	common.hpp\
+	error.hpp\
 	gdt.hpp\
 	\
 	drivers/dma.hpp\
