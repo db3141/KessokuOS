@@ -5,14 +5,14 @@ PWD=$(shell pwd)
 CXXFLAGS=-ffreestanding -fno-exceptions -fno-rtti -fno-stack-protector -nostdlib -ggdb -Wall -Wextra -mgeneral-regs-only -I$(PWD)
 LINK_FLAGS=-lgcc
 
-BUILD_DIR=../build/os
+BUILD_OUT=$(BUILD_DIR)/kernel
 
-OUTPUT_FILE=$(BUILD_DIR)/os.elf
-UNSTRIPPED_OUTPUT_FILE=$(BUILD_DIR)/os_unstripped.elf
-LINKER_SCRIPT=os.lds
+OUTPUT_FILE=$(BUILD_OUT)/kernel.elf
+UNSTRIPPED_OUTPUT_FILE=$(BUILD_OUT)/kernel_unstripped.elf
+LINKER_SCRIPT=kernel.lds
 
 SOURCE_FILES=\
-	os.cpp\
+	kernel.cpp\
 	common.cpp\
 	gdt.cpp\
 	\
@@ -46,25 +46,26 @@ HEADER_FILES=\
 	\
 	memory-manager/manager.hpp\
 	\
+	data/error_or.hpp\
 	data/queue.hpp\
 	data/fc_vector.hpp\
 
 
-OBJS=$(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SOURCE_FILES))
+OBJS=$(patsubst %.cpp,$(BUILD_OUT)/%.o,$(SOURCE_FILES))
 
-CRTI_OBJ:=$(BUILD_DIR)/crt/crti.o
+CRTI_OBJ:=$(BUILD_OUT)/crt/crti.o
 CRTBEGIN_OBJ:=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtend.o)
-CRTN_OBJ:=$(BUILD_DIR)/crt/crtn.o
+CRTN_OBJ:=$(BUILD_OUT)/crt/crtn.o
 
 OBJ_LINK_LIST:=$(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJS) $(CRTEND_OBJ) $(CRTN_OBJ)
 
 all: $(OUTPUT_FILE)
 
-$(BUILD_DIR)/crt/%.o: crt/%.asm | create_build_dir
+$(BUILD_OUT)/crt/%.o: crt/%.asm | create_build_dir
 	nasm -f elf $< -o $@ -w+all
 
-$(BUILD_DIR)/%.o: %.cpp | create_build_dir
+$(BUILD_OUT)/%.o: %.cpp | create_build_dir
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(LINK_FLAGS)
 
 $(OUTPUT_FILE): $(UNSTRIPPED_OUTPUT_FILE)
@@ -75,10 +76,10 @@ $(UNSTRIPPED_OUTPUT_FILE): $(OBJ_LINK_LIST)
 
 .PHONY: create_build_dir
 create_build_dir:
-	-mkdir $(BUILD_DIR)
-	-mkdir $(BUILD_DIR)/drivers $(BUILD_DIR)/interrupts $(BUILD_DIR)/memory-manager $(BUILD_DIR)/crt
+	-mkdir $(BUILD_OUT)
+	-mkdir $(BUILD_OUT)/drivers $(BUILD_OUT)/interrupts $(BUILD_OUT)/memory-manager $(BUILD_OUT)/crt
 
 .PHONY: clean
 clean:
-	-rm -rf $(BUILD_DIR)/*
-	-rmdir $(BUILD_DIR)
+	-rm -rf $(BUILD_OUT)/*
+	-rmdir $(BUILD_OUT)

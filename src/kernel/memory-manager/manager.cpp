@@ -47,12 +47,12 @@ namespace Kernel::MemoryManager {
     size_t find_first_gte_free_block(size_t t_size);
 
     void add_free_block(BlockHeader* t_block);
-    SZNN::ErrorOr<void> remove_free_block(BlockHeader* t_block);
+    Data::ErrorOr<void> remove_free_block(BlockHeader* t_block);
 
     size_t get_block_size(const BlockHeader* t_block);
 
 
-    SZNN::ErrorOr<void> initialize() {
+    Data::ErrorOr<void> initialize() {
         initialize_memory_range();
 
         BlockHeader* block = reinterpret_cast<BlockHeader*>(HEAP_BASE_ADDRESS);
@@ -75,10 +75,10 @@ namespace Kernel::MemoryManager {
         s_memoryInfo = MemoryInfo { block, block, memEndAddress, {} };
         s_memoryInfo.freeBlocks.push_back(block);
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
-    SZNN::ErrorOr<void*> malloc(size_t t_size) {
+    Data::ErrorOr<void*> malloc(size_t t_size) {
         ASSERT(t_size != 0, -1); // TODO: error code
         ASSERT(s_memoryInfo.baseNode != nullptr, -1); // TODO: error code
 
@@ -104,9 +104,9 @@ namespace Kernel::MemoryManager {
         return reinterpret_cast<u8*>(block) + sizeof(BlockHeader);
     }
 
-    SZNN::ErrorOr<void> free(void* t_memory) {
+    Data::ErrorOr<void> free(void* t_memory) {
         if (t_memory == nullptr) {
-            return SZNN::ErrorOr<void>();
+            return Data::ErrorOr<void>();
         }
 
         BlockHeader* node = reinterpret_cast<BlockHeader*>(reinterpret_cast<u8*>(t_memory) - sizeof(BlockHeader));
@@ -139,7 +139,7 @@ namespace Kernel::MemoryManager {
 
         add_free_block(node);
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
     void print_heap_information() {
@@ -240,14 +240,14 @@ namespace Kernel::MemoryManager {
     }
 
     // TODO: improve the efficiency of this (e.g. second binary search over the addresses)
-    SZNN::ErrorOr<void> remove_free_block(BlockHeader* t_block) {
+    Data::ErrorOr<void> remove_free_block(BlockHeader* t_block) {
         const size_t blockSize = get_block_size(t_block);
         const size_t startIndex = find_first_gte_free_block(blockSize);
 
         for (size_t i = startIndex; i < s_memoryInfo.freeBlocks.size() && blockSize == get_block_size(s_memoryInfo.freeBlocks[i]); i++) {
             if (t_block == s_memoryInfo.freeBlocks[i]) {
                 s_memoryInfo.freeBlocks.remove(i);
-                return SZNN::ErrorOr<void>();
+                return Data::ErrorOr<void>();
             }
         }
 
@@ -269,7 +269,7 @@ namespace Kernel::MemoryManager {
 namespace Kernel {
 
     void* kmalloc(size_t t_size) {
-        SZNN::ErrorOr<void*> result = Kernel::MemoryManager::malloc(t_size);
+        Data::ErrorOr<void*> result = Kernel::MemoryManager::malloc(t_size);
         if (result.is_error()) {
             MemoryManager::print_heap_information();
             VGA::put_string("Failed to allocate memory of size: ");
@@ -282,7 +282,7 @@ namespace Kernel {
     }
 
     void kfree(void* t_memory) {
-        SZNN::ErrorOr<void> result = Kernel::MemoryManager::free(t_memory);
+        Data::ErrorOr<void> result = Kernel::MemoryManager::free(t_memory);
 
         if (result.is_error()) {
             MemoryManager::print_heap_information();

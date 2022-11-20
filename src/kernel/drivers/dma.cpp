@@ -41,7 +41,7 @@ namespace Kernel::DMA {
         MODE_REG_4_7 = 0xD6
     };
 
-    SZNN::ErrorOr<u8> get_start_address_port(u8 t_channel) {
+    Data::ErrorOr<u8> get_start_address_port(u8 t_channel) {
         ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
 
         const u8 REGISTERS[8] = {
@@ -58,7 +58,7 @@ namespace Kernel::DMA {
         return REGISTERS[t_channel];
     }
 
-    SZNN::ErrorOr<u8> get_page_address_port(u8 t_channel) {
+    Data::ErrorOr<u8> get_page_address_port(u8 t_channel) {
         ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
 
         const u8 REGISTERS[8] = {
@@ -75,7 +75,7 @@ namespace Kernel::DMA {
         return REGISTERS[t_channel];
     }
 
-    SZNN::ErrorOr<u8> get_count_port(u8 t_channel) {
+    Data::ErrorOr<u8> get_count_port(u8 t_channel) {
         ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
 
         const u8 REGISTERS[8] = {
@@ -92,22 +92,22 @@ namespace Kernel::DMA {
         return REGISTERS[t_channel];
     }
 
-    SZNN::ErrorOr<u8> get_single_channel_mask(u8 t_channel) {
+    Data::ErrorOr<u8> get_single_channel_mask(u8 t_channel) {
         ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
         return (t_channel < 4) ? (SINGLE_CHANNEL_MASK_REG_0_3) : (SINGLE_CHANNEL_MASK_REG_4_7);
     }
 
-    SZNN::ErrorOr<u8> get_flip_flop_reset(u8 t_channel) {
+    Data::ErrorOr<u8> get_flip_flop_reset(u8 t_channel) {
         ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
         return (t_channel < 4) ? (FLIP_FLOP_RESET_REG_0_3) : (FLIP_FLOP_RESET_REG_4_7);
     }
 
-    SZNN::ErrorOr<u8> get_mode(u8 t_channel) {
+    Data::ErrorOr<u8> get_mode(u8 t_channel) {
         ASSERT(t_channel < 8, ERROR_INVALID_CHANNEL);
         return (t_channel < 4) ? (MODE_REG_0_3) : (MODE_REG_4_7);
     }
 
-    SZNN::ErrorOr<void> initialize_channel(u8 t_channel, void* t_bufferAddress, u16 t_count) {
+    Data::ErrorOr<void> initialize_channel(u8 t_channel, void* t_bufferAddress, u16 t_count) {
         const u8 startAddressPort = TRY(get_start_address_port(t_channel));
         const u8 pageAddressPort = TRY(get_page_address_port(t_channel));
         const u8 countPort = TRY(get_count_port(t_channel));
@@ -128,10 +128,10 @@ namespace Kernel::DMA {
 
         port_write_byte(channelMaskPort, t_channel & 0x03); // unmask the DMA channel to be initialized
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
-    SZNN::ErrorOr<void> set_mode(u8 t_channel, u8 t_transferType, bool t_autoInit, bool t_down, u8 t_mode) {
+    Data::ErrorOr<void> set_mode(u8 t_channel, u8 t_transferType, bool t_autoInit, bool t_down, u8 t_mode) {
         const u8 channelMaskPort = TRY(get_single_channel_mask(t_channel));
         const u8 modePort = TRY(get_mode(t_channel));
         const u8 parameter =
@@ -147,7 +147,7 @@ namespace Kernel::DMA {
 
         port_write_byte(channelMaskPort, t_channel & 0x03); // unmask the DMA channel to be initialized
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
 }

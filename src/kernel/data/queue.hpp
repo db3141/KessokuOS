@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #include "error_code_groups.hpp"
-#include "sznnlib/error_or.hpp"
+#include "data/error_or.hpp"
 
 namespace Kernel::Data {
 
@@ -38,7 +38,7 @@ namespace Kernel::Data {
             return 0;
         }
         
-        SZNN::ErrorOr<T> pop_front() {
+        Data::ErrorOr<T> pop_front() {
             if (is_empty()) {
                 return QUEUE_IS_EMPTY;
             }

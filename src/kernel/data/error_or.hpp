@@ -1,7 +1,7 @@
-#ifndef SZNN_ERROR_OR_INCLUDED
-#define SZNN_ERROR_OR_INCLUDED
+#ifndef DATA_ERROR_OR_INCLUDED
+#define DATA_ERROR_OR_INCLUDED
 
-namespace SZNN {
+namespace Kernel::Data {
 
     // Thanks SerenityOS for the idea!
 

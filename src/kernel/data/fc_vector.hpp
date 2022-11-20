@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #include "error_code_groups.hpp"
-#include "sznnlib/error_or.hpp"
+#include "data/error_or.hpp"
 
 namespace Kernel::Data {
 
@@ -21,7 +21,7 @@ namespace Kernel::Data {
             ;
         }
 
-        SZNN::ErrorOr<void> insert(size_t t_index, const T& t_value) {
+        Data::ErrorOr<void> insert(size_t t_index, const T& t_value) {
             ASSERT(t_index <= m_size, FC_VECTOR_INVALID_INDEX);
             ASSERT(m_size < CAPACITY, FC_VECTOR_IS_FULL);
 
@@ -36,10 +36,10 @@ namespace Kernel::Data {
             m_array[t_index] = t_value;
             m_size++;
 
-            return SZNN::ErrorOr<void>();
+            return Data::ErrorOr<void>();
         }
 
-        SZNN::ErrorOr<void> remove(size_t t_index) {
+        Data::ErrorOr<void> remove(size_t t_index) {
             ASSERT(t_index < m_size, FC_VECTOR_INVALID_INDEX);
 
             for (size_t i = t_index; i < m_size; i++) {
@@ -48,14 +48,14 @@ namespace Kernel::Data {
 
             m_size--;
 
-            return SZNN::ErrorOr<void>();
+            return Data::ErrorOr<void>();
         }
 
-        SZNN::ErrorOr<void> push_back(const T& t_value) {
+        Data::ErrorOr<void> push_back(const T& t_value) {
             return insert(m_size, t_value);
         }
 
-        SZNN::ErrorOr<void> pop_back() {
+        Data::ErrorOr<void> pop_back() {
             return remove(size() - 1);
         }
 

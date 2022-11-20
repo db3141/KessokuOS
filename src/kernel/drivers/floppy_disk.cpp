@@ -3,7 +3,7 @@
 #include "drivers/vga.hpp"
 #include "floppy_disk.hpp"
 #include "interrupts/pic.hpp"
-#include "sznnlib/error_or.hpp"
+#include "data/error_or.hpp"
 
 namespace Kernel::FloppyDisk {
 
@@ -66,14 +66,14 @@ namespace Kernel::FloppyDisk {
     static u8 s_parameterBytes[PARAMETER_BUFFER_SIZE] = {0};
     static u8 s_resultBytes[RESULT_BUFFER_SIZE] = {0};
 
-    SZNN::ErrorOr<void> read_cylinder(u8 t_drive, u8 t_cylinder);
+    Data::ErrorOr<void> read_cylinder(u8 t_drive, u8 t_cylinder);
 
-    SZNN::ErrorOr<void> send_command(Command t_command);
+    Data::ErrorOr<void> send_command(Command t_command);
 
-    SZNN::ErrorOr<void> select_drive(u8 t_drive, bool t_motorOn);
+    Data::ErrorOr<void> select_drive(u8 t_drive, bool t_motorOn);
 
-    SZNN::ErrorOr<u8> read_msr_until_rqm();
-    SZNN::ErrorOr<void> wait_for_irq();
+    Data::ErrorOr<u8> read_msr_until_rqm();
+    Data::ErrorOr<void> wait_for_irq();
 
     struct CHSAddress {
         u8 c, h, s;
@@ -88,13 +88,13 @@ namespace Kernel::FloppyDisk {
     }
 
     // Base Case
-    SZNN::ErrorOr<void> set_parameters(size_t t_index) {
+    Data::ErrorOr<void> set_parameters(size_t t_index) {
         (void)t_index; // get compiler to stop complaining about unused parameter
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
     template <typename T, typename ...Ts>
-    SZNN::ErrorOr<void> set_parameters(size_t t_index, T t_parameter, Ts... t_rest) {
+    Data::ErrorOr<void> set_parameters(size_t t_index, T t_parameter, Ts... t_rest) {
         ASSERT(t_index < PARAMETER_BUFFER_SIZE, ERROR_INVALID_PARAMETER);
         s_parameterBytes[t_index] = t_parameter;
 
@@ -102,13 +102,13 @@ namespace Kernel::FloppyDisk {
     }
 
     template <typename ...Ts>
-    SZNN::ErrorOr<void> execute_command(Command t_command, Ts... t_parameters) {
+    Data::ErrorOr<void> execute_command(Command t_command, Ts... t_parameters) {
         TRY(set_parameters(0, t_parameters...));
 
         for (size_t i = 0; i < COMMAND_ATTEMPT_COUNT; i++) {
             const auto result = send_command(t_command);
             if (!result.is_error()) {
-                return SZNN::ErrorOr<void>();
+                return Data::ErrorOr<void>();
             }
         }
 
@@ -222,7 +222,7 @@ namespace Kernel::FloppyDisk {
             (t_command == COMMAND_SEEK); // TODO: make sure all commands are included here!
     }
 
-    SZNN::ErrorOr<void> initialize() {
+    Data::ErrorOr<void> initialize() {
         s_floppyState.waitingForIRQ = true;
         s_floppyState.currentDrive = 0;
         s_floppyState.diskMotorOn[0] = false;
@@ -245,10 +245,10 @@ namespace Kernel::FloppyDisk {
 
         TRY(DMA::initialize_channel(2, s_dmaBuffer, DMA_BUFFER_SIZE - 1)); // set-up DMA on channel 2 (floppy disk channel)
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
-    SZNN::ErrorOr<void> reset() {
+    Data::ErrorOr<void> reset() {
         s_floppyState.waitingForIRQ = true; // Set state to be ready for a reset IRQ
         port_write_byte(DATARATE_SELECT_REGISTER, 0x80);
 
@@ -256,10 +256,10 @@ namespace Kernel::FloppyDisk {
 
         TRY(select_drive(s_floppyState.currentDrive, s_floppyState.diskMotorOn[s_floppyState.currentDrive]));
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
-    SZNN::ErrorOr<void> read_data(u8 t_drive, size_t t_lba, size_t t_count, u8* r_buffer) {
+    Data::ErrorOr<void> read_data(u8 t_drive, size_t t_lba, size_t t_count, u8* r_buffer) {
         ASSERT(t_count > 0, ERROR_INVALID_PARAMETER);
 
         const CHSAddress startAddress = lbaToCHS(t_lba);
@@ -297,10 +297,10 @@ namespace Kernel::FloppyDisk {
             memcpy(r_buffer, s_dmaBuffer + offset, byteCount);
         }
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
-    SZNN::ErrorOr<void> read_cylinder(u8 t_drive, u8 t_cylinder) {
+    Data::ErrorOr<void> read_cylinder(u8 t_drive, u8 t_cylinder) {
         TRY(select_drive(t_drive, true));
 
         TRY(DMA::set_mode(2, 0b10, true, false, 0b01)); // prepare DMA channel for reading
@@ -318,10 +318,10 @@ namespace Kernel::FloppyDisk {
             )
         );
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
-    SZNN::ErrorOr<void> send_command(Command t_command) {
+    Data::ErrorOr<void> send_command(Command t_command) {
         // Send command byte
         u8 msr = port_read_byte(MAIN_STATUS_REGISTER);
         ASSERT((msr & 0xc0) == 0x80, ERROR_CONTROLLER_NEEDS_RESET); // Check that RQM = 1 and DIO = 0
@@ -358,10 +358,10 @@ namespace Kernel::FloppyDisk {
             ASSERT((msr & 0x50) == 0x00, ERROR_COMMAND_FAILED);
         }
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
-    SZNN::ErrorOr<void> select_drive(u8 t_drive, bool t_motorOn) {
+    Data::ErrorOr<void> select_drive(u8 t_drive, bool t_motorOn) {
         ASSERT(t_drive < 4, ERROR_INVALID_PARAMETER);
 
         if (s_floppyState.currentDrive != t_drive) {
@@ -377,10 +377,10 @@ namespace Kernel::FloppyDisk {
 
         sleep(DISK_SPINUP_WAIT_TIME); // wait for disk to spin up
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
-    SZNN::ErrorOr<u8> read_msr_until_rqm() {
+    Data::ErrorOr<u8> read_msr_until_rqm() {
         u8 msr = 0;
         for (size_t i = 0; i < MSR_READ_ATTEMPT_COUNT; i++) {
             msr = port_read_byte(MAIN_STATUS_REGISTER);
@@ -392,11 +392,11 @@ namespace Kernel::FloppyDisk {
         return ERROR_TIMEOUT;
     }
 
-    SZNN::ErrorOr<void> wait_for_irq() {
+    Data::ErrorOr<void> wait_for_irq() {
         const u32 t1 = PIT::get_ticks();
         while (PIT::get_ticks() - t1 < TIMEOUT_TIME) {
             if (!s_floppyState.waitingForIRQ) {
-                return SZNN::ErrorOr<void>();
+                return Data::ErrorOr<void>();
             }
             KERNEL_HALT();
         }

@@ -1,8 +1,11 @@
-BUILD_DIR:=build
+export BUILD_DIR:=$(shell pwd)/build
+
+BOOTLOADER_DIR:=src/bootloader
+KERNEL_DIR:=src/kernel
 
 BOOT0=$(BUILD_DIR)/bootloader/boot0.o
 BOOT1=$(BUILD_DIR)/bootloader/boot1.o
-OS=$(BUILD_DIR)/os/os.elf
+OS=$(BUILD_DIR)/kernel/kernel.elf
 
 ARCHIVE_FILES=$(BOOT1) $(OS) media/*
 FILE_ARCHIVE=$(BUILD_DIR)/file_system.tar
@@ -11,15 +14,15 @@ DISK_IMG=$(BUILD_DIR)/bootdisk.img
 
 all: bootdisk
 
-.PHONY: bootdisk bootloader os
+.PHONY: bootdisk bootloader kernel
 
 bootloader: | create_build_dir
-	make -C bootloader
+	make -C $(BOOTLOADER_DIR)
 
-os: | create_build_dir
-	make -C os
+kernel: | create_build_dir
+	make -C $(KERNEL_DIR)
 
-bootdisk: bootloader os
+bootdisk: bootloader kernel
 	dd if=/dev/zero of=$(DISK_IMG) bs=512 count=2880
 	dd conv=notrunc if=$(BOOT0) of=$(DISK_IMG) bs=512 count=1 seek=0
 	tar -c --format=ustar --transform='s,.*/,,gsr' -f $(FILE_ARCHIVE) $(ARCHIVE_FILES)
@@ -27,8 +30,8 @@ bootdisk: bootloader os
 
 .PHONY: clean
 clean:
-	-make -C bootloader clean
-	-make -C os clean
+	-make -C $(BOOTLOADER_DIR) clean
+	-make -C $(KERNEL_DIR) clean
 	-rm $(BUILD_DIR)/*
 	-rmdir $(BUILD_DIR)
 

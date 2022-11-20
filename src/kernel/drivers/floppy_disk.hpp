@@ -4,7 +4,7 @@
 #include "common.hpp"
 #include "error_code_groups.hpp"
 #include "interrupts/interrupt_handler.hpp"
-#include "sznnlib/error_or.hpp"
+#include "data/error_or.hpp"
 
 namespace Kernel::FloppyDisk {
 
@@ -21,10 +21,10 @@ namespace Kernel::FloppyDisk {
 
     constexpr size_t SECTOR_SIZE = 512;
     
-    SZNN::ErrorOr<void> initialize();
-    SZNN::ErrorOr<void> reset();
+    Data::ErrorOr<void> initialize();
+    Data::ErrorOr<void> reset();
 
-    SZNN::ErrorOr<void> read_data(u8 t_drive, size_t t_lba, size_t t_count, u8* r_buffer);
+    Data::ErrorOr<void> read_data(u8 t_drive, size_t t_lba, size_t t_count, u8* r_buffer);
 
     INTERRUPT_HANDLER void floppy_handler(InterruptHandler::InterruptFrame* t_frame);
 }

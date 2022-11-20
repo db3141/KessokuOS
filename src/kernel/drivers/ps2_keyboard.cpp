@@ -25,7 +25,7 @@ namespace Kernel::PS2::Keyboard {
     };
 
     // Send command until an response isn't a resend or the attempt limit is reached
-    SZNN::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command);
+    Data::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command);
 
     Keycode parse_scancode(KeyEvent& r_event);
     
@@ -37,7 +37,7 @@ namespace Kernel::PS2::Keyboard {
         );
     }
 
-    SZNN::ErrorOr<void> initialize() {
+    Data::ErrorOr<void> initialize() {
         const DeviceType type = TRY(get_first_port_device_type());
         if (!is_keyboard(type)) {
             VGA::put_char('\'');
@@ -54,14 +54,14 @@ namespace Kernel::PS2::Keyboard {
         }
         TRY(resend_until_success_or_timeout(COMMAND_ENABLE_SCANNING));
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
-    SZNN::ErrorOr<KeyboardEvent> poll_event() {
+    Data::ErrorOr<KeyboardEvent> poll_event() {
         return KEYBOARD_EVENT_QUEUE.pop_front();
     }
 
-    SZNN::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command) {
+    Data::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command) {
         for (u32 i = 0; i < 3; i++) {
             TRY(send_to_device(t_command));
 

@@ -2,7 +2,7 @@
 #define PS2_INCLUDED
 
 #include "error_code_groups.hpp"
-#include "sznnlib/error_or.hpp"
+#include "data/error_or.hpp"
 
 #include "interrupts/interrupt_handler.hpp"
 
@@ -47,16 +47,16 @@ namespace Kernel::PS2 {
         }
     }
 
-    SZNN::ErrorOr<void> initialize();
+    Data::ErrorOr<void> initialize();
 
     //void reset_devices();
-    SZNN::ErrorOr<void> send_to_device(u8 t_command);
-    SZNN::ErrorOr<u8> get_response();
+    Data::ErrorOr<void> send_to_device(u8 t_command);
+    Data::ErrorOr<u8> get_response();
 
-    SZNN::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command);
+    Data::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command);
     
-    SZNN::ErrorOr<DeviceType> get_first_port_device_type();
-    // SZNN::ErrorOr<DeviceType> get_second_port_device_type();
+    Data::ErrorOr<DeviceType> get_first_port_device_type();
+    // Data::ErrorOr<DeviceType> get_second_port_device_type();
 
 }
 

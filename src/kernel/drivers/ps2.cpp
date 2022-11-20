@@ -25,12 +25,12 @@ namespace Kernel::PS2 {
         TEST_SECOND_PS2_PORT = 0xA9,
     };
 
-    SZNN::ErrorOr<u8> get_response_immediate();
-    SZNN::ErrorOr<void> send_to_device_immediate();
+    Data::ErrorOr<u8> get_response_immediate();
+    Data::ErrorOr<void> send_to_device_immediate();
 
-    SZNN::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command);
+    Data::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command);
 
-    SZNN::ErrorOr<void> initialize() {
+    Data::ErrorOr<void> initialize() {
         // Disable any PS2 devices
         port_write_byte(COMMAND_REGISTER_PORT, DISABLE_FIRST_PS2);
         io_wait();
@@ -97,21 +97,21 @@ namespace Kernel::PS2 {
             io_wait();
         }
 
-        return SZNN::ErrorOr<void>();
+        return Data::ErrorOr<void>();
     }
 
-    SZNN::ErrorOr<void> send_to_device_immediate(u8 t_command) {
+    Data::ErrorOr<void> send_to_device_immediate(u8 t_command) {
         const u8 status = port_read_byte(STATUS_REGISTER_PORT);
         if (status & 0x02) {
             return ERROR_INPUT_BUFFER_FULL;
         }
         else {
             port_write_byte(DATA_PORT, t_command);
-            return SZNN::ErrorOr<void>();
+            return Data::ErrorOr<void>();
         }
     }
 
-    SZNN::ErrorOr<void> send_to_device(u8 t_command) {
+    Data::ErrorOr<void> send_to_device(u8 t_command) {
         auto result = send_to_device_immediate(t_command);
         for (size_t i = 0; i < 2 && result.is_error(); i++) {
             result = send_to_device_immediate(t_command);
@@ -119,7 +119,7 @@ namespace Kernel::PS2 {
         return result;
     }
 
-    SZNN::ErrorOr<u8> get_response_immediate() {
+    Data::ErrorOr<u8> get_response_immediate() {
         const u8 status = port_read_byte(STATUS_REGISTER_PORT);
 
         // If there is no response then return error
@@ -130,7 +130,7 @@ namespace Kernel::PS2 {
         return port_read_byte(DATA_PORT);
     }
 
-    SZNN::ErrorOr<u8> get_response() {
+    Data::ErrorOr<u8> get_response() {
         auto result = get_response_immediate();
         for (size_t i = 0; i < 2 && result.is_error(); i++) {
             result = get_response_immediate();
@@ -138,7 +138,7 @@ namespace Kernel::PS2 {
         return result;
     }
 
-    SZNN::ErrorOr<DeviceType> get_first_port_device_type() {
+    Data::ErrorOr<DeviceType> get_first_port_device_type() {
         TRY(resend_until_success_or_timeout(0xF5)); // disable scanning
         TRY(resend_until_success_or_timeout(0xF2)); // send identify command
 
@@ -179,12 +179,12 @@ namespace Kernel::PS2 {
     }
 
     /*
-    SZNN::ErrorOr<DeviceType> get_second_port_device_type() {
+    Data::ErrorOr<DeviceType> get_second_port_device_type() {
 
     }
     */
 
-    SZNN::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command) {
+    Data::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command) {
         for (size_t i = 0; i < 3; i++) {
             TRY(send_to_device(t_command));
 

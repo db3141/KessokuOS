@@ -2,7 +2,7 @@
 #define PS2_KEYBOARD_INCLUDED
 
 #include "error_code_groups.hpp"
-#include "sznnlib/error_or.hpp"
+#include "data/error_or.hpp"
 
 namespace Kernel::PS2::Keyboard {
 
@@ -506,9 +506,9 @@ namespace Kernel::PS2::Keyboard {
         }
     }
 
-    SZNN::ErrorOr<void> initialize();
+    Data::ErrorOr<void> initialize();
 
-    SZNN::ErrorOr<KeyboardEvent> poll_event();
+    Data::ErrorOr<KeyboardEvent> poll_event();
 
     bool is_key_pressed(Keycode t_key);
 

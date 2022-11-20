@@ -3,14 +3,14 @@
 
 #include "common.hpp"
 #include "error_code_groups.hpp"
-#include "sznnlib/error_or.hpp"
+#include "data/error_or.hpp"
 
 namespace Kernel::MemoryManager {
 
-    SZNN::ErrorOr<void> initialize();
+    Data::ErrorOr<void> initialize();
 
-    SZNN::ErrorOr<void*> malloc(size_t t_size);
-    SZNN::ErrorOr<void> free(void* t_memory);
+    Data::ErrorOr<void*> malloc(size_t t_size);
+    Data::ErrorOr<void> free(void* t_memory);
 
     void print_memory_range_information();
     void print_heap_information();
