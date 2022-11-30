@@ -405,7 +405,7 @@ boot1_start:
 
     ; Read in kernel file meta data
     xor bx, bx                      ; Reset bx
-    call read_next_floppy_sector_repeated
+    call read_next_floppy_sector_repeated ; TODO: get kernel by filepath
 
     jc boot1_floppy_fail            ; If failed then jump to error code
 

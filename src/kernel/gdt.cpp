@@ -21,17 +21,17 @@ namespace Kernel::GDT {
         ;
     }
 
-    int add_entry(u16 t_w1, u16 t_w2, u16 t_w3, u16 t_w4) {
+    Data::ErrorOr<void> add_entry(u16 t_w1, u16 t_w2, u16 t_w3, u16 t_w4) {
         const size_t entryCount = KERNEL_GDT.size / sizeof(GDTEntry);
 
         if (entryCount >= GDT_MAX_ENTRY_COUNT) {
-            return 1;
+            return Error::CONTAINER_IS_FULL;
         }
         const GDTEntry entry = { t_w1, t_w2, t_w3, t_w4 };
         KERNEL_GDT.entries[entryCount] = entry;
         KERNEL_GDT.size += sizeof(GDTEntry);
 
-        return 0;
+        return Data::ErrorOr<void>();
     }
 
     void load_table() {

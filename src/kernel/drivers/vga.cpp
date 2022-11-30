@@ -14,13 +14,6 @@ namespace Kernel::VGA {
         clear_screen();
     }
 
-    void clear_line() {
-        for (u32 x = 0; x < TTY_WIDTH; x++) {
-            TEXT_BUFFER[cursor.y * TTY_WIDTH + x] = ' ';
-        }
-        cursor.x = 0;
-    }
-    
     void clear_screen() {
         for (u32 i = 0; i < TTY_WIDTH * TTY_HEIGHT; i++) {
             TEXT_BUFFER[i] = 0x0700;

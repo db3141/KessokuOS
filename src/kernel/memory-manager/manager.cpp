@@ -21,22 +21,22 @@ namespace Kernel::MemoryManager {
     };
 
     struct MemoryRange {
-        u32 baseAddress;
-        u32 regionLength;
+        uintptr_t baseAddress;
+        size_t regionLength;
     };
 
     // TODO: Replace this with an array class
     struct MemoryRangeTable {
         MemoryRange entries[32];
-        u32 entryCount;
+        size_t entryCount;
     };
 
 
     extern "C" u8 _kernel_end[];
 
     constexpr size_t PAGE_SIZE = 4096; // TODO: change this
-    u8* const HEAP_BASE_ADDRESS = _kernel_end - (int(_kernel_end) % PAGE_SIZE) + PAGE_SIZE;
-    u64* const MEMORY_INFORMATION_TABLE = (u64*) 0x7000;
+    u8* const HEAP_BASE_ADDRESS = _kernel_end - (reinterpret_cast<uintptr_t>(_kernel_end) % PAGE_SIZE) + PAGE_SIZE;
+    u64* const MEMORY_INFORMATION_TABLE = reinterpret_cast<u64*>(0x7000);
 
     static MemoryInfo s_memoryInfo;
     static MemoryRangeTable s_memoryRangeTable;
@@ -61,11 +61,11 @@ namespace Kernel::MemoryManager {
         u8* memEndAddress = nullptr;
         for (size_t i = 0; i < 32; i++) {
             const auto& entry = s_memoryRangeTable.entries[i];
-            const u32 startAddress = entry.baseAddress;
-            const u32 endAddress = startAddress + entry.regionLength;
+            const uintptr_t startAddress = entry.baseAddress;
+            const uintptr_t endAddress = startAddress + entry.regionLength;
 
             // TODO: change this to use more than one memory region
-            if (startAddress <= reinterpret_cast<u32>(HEAP_BASE_ADDRESS) && reinterpret_cast<u32>(HEAP_BASE_ADDRESS) < endAddress) {
+            if (startAddress <= reinterpret_cast<uintptr_t>(HEAP_BASE_ADDRESS) && reinterpret_cast<uintptr_t>(HEAP_BASE_ADDRESS) < endAddress) {
                 memEndAddress = reinterpret_cast<u8*>(endAddress);
                 break;
             }
@@ -148,7 +148,7 @@ namespace Kernel::MemoryManager {
         VGA::put_string("------\n");
         for (const BlockHeader* node = s_memoryInfo.baseNode; node != nullptr; node = node->next) {
             VGA::put_string("Address: ");
-            VGA::put_hex(int(node));
+            VGA::put_hex(reinterpret_cast<uintptr_t>(node));
             VGA::put_string(", ");
 
             VGA::put_string("Size: ");
@@ -275,6 +275,7 @@ namespace Kernel {
             MemoryManager::print_heap_information();
             VGA::put_string("Failed to allocate memory of size: ");
             VGA::put_unsigned_decimal(t_size);
+            VGA::put_string(" bytes");
             VGA::new_line();
             KERNEL_STOP();
         }

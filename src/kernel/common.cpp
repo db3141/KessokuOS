@@ -41,8 +41,8 @@ namespace Kernel {
         port_write_byte(0x80, 0);
     }
 
-    void sleep(u32 t_ticks) {
-        const u32 start = PIT::get_ticks();
+    void sleep(uint t_ticks) {
+        const uint start = PIT::get_ticks();
 
         while (PIT::get_ticks() - start < t_ticks) {
             KERNEL_HALT();

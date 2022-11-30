@@ -45,12 +45,12 @@ namespace Kernel::FloppyDisk {
     };
 
     static volatile struct {
-        bool waitingForIRQ;
         u8 currentDrive;
+        bool waitingForIRQ;
         bool diskMotorOn[4];
     } s_floppyState;
 
-    constexpr size_t MSR_READ_ATTEMPT_COUNT = 10; // TODO: maybe reduce this a bit
+    constexpr size_t MSR_READ_ATTEMPT_COUNT = 3;
     constexpr size_t COMMAND_ATTEMPT_COUNT = 3;
     constexpr size_t TIMEOUT_TIME = 3 * PIT::TICKS_PER_SECOND;
     constexpr size_t DISK_SPINUP_WAIT_TIME = 300; // 300ms
@@ -79,7 +79,7 @@ namespace Kernel::FloppyDisk {
         u8 c, h, s;
     };
 
-    constexpr CHSAddress lbaToCHS(size_t t_lba) {
+    constexpr CHSAddress lba_to_chs(size_t t_lba) {
         const u8 cylinder = t_lba / (SECTORS_PER_CYLINDER * HEAD_COUNT);
         const u8 head = (t_lba / SECTORS_PER_CYLINDER) % HEAD_COUNT;
         const u8 sector = (t_lba % SECTORS_PER_CYLINDER) + 1;
@@ -88,22 +88,23 @@ namespace Kernel::FloppyDisk {
     }
 
     // Base Case
-    Data::ErrorOr<void> set_parameters(size_t t_index) {
-        (void)t_index; // get compiler to stop complaining about unused parameter
-        return Data::ErrorOr<void>();
+    template <size_t T_index=0>
+    void set_parameters() {
+        ;
     }
 
-    template <typename T, typename ...Ts>
-    Data::ErrorOr<void> set_parameters(size_t t_index, T t_parameter, Ts... t_rest) {
-        ASSERT(t_index < PARAMETER_BUFFER_SIZE, Error::INVALID_ARGUMENT);
-        s_parameterBytes[t_index] = t_parameter;
+    template <size_t T_index=0, typename T, typename ...Ts>
+    void set_parameters(T t_parameter, Ts... t_rest) {
+        static_assert(T_index < PARAMETER_BUFFER_SIZE, "Index out of range");
 
-        return set_parameters(t_index + 1, t_rest...);
+        s_parameterBytes[T_index] = t_parameter;
+
+        return set_parameters<T_index + 1, Ts...>(t_rest...);
     }
 
     template <typename ...Ts>
     Data::ErrorOr<void> execute_command(Command t_command, Ts... t_parameters) {
-        TRY(set_parameters(0, t_parameters...));
+        set_parameters(t_parameters...);
 
         for (size_t i = 0; i < COMMAND_ATTEMPT_COUNT; i++) {
             const auto result = send_command(t_command);
@@ -223,23 +224,21 @@ namespace Kernel::FloppyDisk {
     }
 
     Data::ErrorOr<void> initialize() {
-        s_floppyState.waitingForIRQ = true;
         s_floppyState.currentDrive = 0;
-        s_floppyState.diskMotorOn[0] = false;
-        s_floppyState.diskMotorOn[1] = false;
-        s_floppyState.diskMotorOn[2] = false;
-        s_floppyState.diskMotorOn[3] = false;
+        s_floppyState.waitingForIRQ = false;
+        for (size_t i = 0; i < 4; i++) {
+            s_floppyState.diskMotorOn[i] = false;
+        }
 
         TRY(execute_command(COMMAND_VERSION));
         ASSERT(s_resultBytes[0] == 0x90, Error::NOT_IMPLEMENTED); // TODO: possibly implement other versions
 
         TRY(execute_command(COMMAND_CONFIGURE, 0x00, 0x57, 0x00)); // Implied seek on, FIFO on, drive polling mode off, threshold = 8 (7 + 1)
         TRY(execute_command(COMMAND_LOCK));
-        TRY(reset());
+        TRY(reset(0, true));
 
-        TRY(execute_command(COMMAND_VERSION)); // TODO: figure out why this helps
+        TRY(execute_command(COMMAND_VERSION)); // TODO: figure out why this helps (disk change flag gets cleared?)
 
-        TRY(select_drive(0, true)); // drive needs to be selected with motor on to recalibrate
         TRY(execute_command(COMMAND_RECALIBRATE, 0));
         TRY(execute_command(COMMAND_SENSE_INTERRUPT));
 
@@ -248,13 +247,13 @@ namespace Kernel::FloppyDisk {
         return Data::ErrorOr<void>();
     }
 
-    Data::ErrorOr<void> reset() {
+    Data::ErrorOr<void> reset(u8 t_drive, bool t_motorOn) {
         s_floppyState.waitingForIRQ = true; // Set state to be ready for a reset IRQ
         port_write_byte(DATARATE_SELECT_REGISTER, 0x80);
 
         TRY(wait_for_irq());
 
-        TRY(select_drive(s_floppyState.currentDrive, s_floppyState.diskMotorOn[s_floppyState.currentDrive]));
+        TRY(select_drive(t_drive, t_motorOn));
 
         return Data::ErrorOr<void>();
     }
@@ -262,8 +261,8 @@ namespace Kernel::FloppyDisk {
     Data::ErrorOr<void> read_data(u8 t_drive, size_t t_lba, size_t t_count, u8* r_buffer) {
         ASSERT(t_count > 0, Error::INVALID_ARGUMENT);
 
-        const CHSAddress startAddress = lbaToCHS(t_lba);
-        const CHSAddress endAddress = lbaToCHS(t_lba + t_count);
+        const CHSAddress startAddress = lba_to_chs(t_lba);
+        const CHSAddress endAddress = lba_to_chs(t_lba + t_count);
 
         const auto get_next_cylinder = [](CHSAddress t_address) -> CHSAddress {
             t_address.c++;
@@ -381,9 +380,8 @@ namespace Kernel::FloppyDisk {
     }
 
     Data::ErrorOr<u8> read_msr_until_rqm() {
-        u8 msr = 0;
         for (size_t i = 0; i < MSR_READ_ATTEMPT_COUNT; i++) {
-            msr = port_read_byte(MAIN_STATUS_REGISTER);
+            u8 msr = port_read_byte(MAIN_STATUS_REGISTER);
 
             if ((msr & 0x80) == 0x80) {
                 return msr;
@@ -393,8 +391,9 @@ namespace Kernel::FloppyDisk {
     }
 
     Data::ErrorOr<void> wait_for_irq() {
-        const u32 t1 = PIT::get_ticks();
-        while (PIT::get_ticks() - t1 < TIMEOUT_TIME) {
+        const uint start = PIT::get_ticks();
+
+        while (PIT::get_ticks() - start < TIMEOUT_TIME) {
             if (!s_floppyState.waitingForIRQ) {
                 return Data::ErrorOr<void>();
             }

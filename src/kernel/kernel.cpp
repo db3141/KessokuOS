@@ -75,8 +75,9 @@ namespace Kernel {
 
         VGA::put_string("Enabling interrupts\n\n");
         enable_interrupts();
-
         VGA::put_string("Done!\n");
+
+        VGA::put_string("CMOS: ");
         VGA::put_hex(read_cmos(0x10));
         VGA::new_line();
 

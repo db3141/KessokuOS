@@ -66,15 +66,15 @@ namespace Kernel::IDT {
         return result;
     }
 
-    int set_entry(size_t t_index, void* t_handlerAddress, u16 t_segmentSelector, IDTGateType t_gateType, bool t_32bit) {
+    Data::ErrorOr<void> set_entry(size_t t_index, void* t_handlerAddress, u16 t_segmentSelector, IDTGateType t_gateType, bool t_32bit) {
         if (t_index >= IDT_MAX_ENTRY_COUNT) {
-            return 1;
+            return Error::INDEX_OUT_OF_RANGE;
         }
 
         const IDTEntry entry = idt_entry_create(reinterpret_cast<u32>(t_handlerAddress), t_segmentSelector, t_gateType, t_32bit);
         KERNEL_IDT.entries[t_index] = entry;
 
-        return 0;
+        return Data::ErrorOr<void>();
     }
 
     void load_table() {

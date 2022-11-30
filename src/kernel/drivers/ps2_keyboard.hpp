@@ -131,6 +131,7 @@ namespace Kernel::PS2::Keyboard {
         KeyEvent event;
     };
 
+    // TODO: move these to character map files on disk
     constexpr const char* get_keycode_string(Keycode t_keycode) {
         switch (t_keycode) {
             case KEYCODE_A:

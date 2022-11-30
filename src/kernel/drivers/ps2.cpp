@@ -9,6 +9,8 @@ namespace Kernel::PS2 {
     constexpr u8 STATUS_REGISTER_PORT = 0x64;
     constexpr u8 COMMAND_REGISTER_PORT = 0x64;
 
+    constexpr uint COMMAND_RETRY_COUNT = 3;
+
     enum Commands : u8 {
         DISABLE_FIRST_PS2  = 0xAD,
         ENABLE_FIRST_PS2   = 0xAE,
@@ -103,7 +105,7 @@ namespace Kernel::PS2 {
     Data::ErrorOr<void> send_to_device_immediate(u8 t_command) {
         const u8 status = port_read_byte(STATUS_REGISTER_PORT);
         if (status & 0x02) {
-            return Error::CONTAINER_IS_FULL;
+            return Error::CONTAINER_IS_FULL; // TODO: change this error
         }
         else {
             port_write_byte(DATA_PORT, t_command);
@@ -113,7 +115,7 @@ namespace Kernel::PS2 {
 
     Data::ErrorOr<void> send_to_device(u8 t_command) {
         auto result = send_to_device_immediate(t_command);
-        for (size_t i = 0; i < 2 && result.is_error(); i++) {
+        for (size_t i = 0; i < COMMAND_RETRY_COUNT && result.is_error(); i++) {
             result = send_to_device_immediate(t_command);
         }
         return result;
@@ -186,7 +188,7 @@ namespace Kernel::PS2 {
     */
 
     Data::ErrorOr<u8> resend_until_success_or_timeout(u8 t_command) {
-        for (size_t i = 0; i < 3; i++) {
+        for (size_t i = 0; i < COMMAND_RETRY_COUNT; i++) {
             TRY(send_to_device(t_command));
 
             const u8 response = TRY(get_response());

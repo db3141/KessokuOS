@@ -14,10 +14,10 @@ namespace Kernel::PIT {
 
     void initialize();
 
-    void set_frequency(Channel t_channel, u32 t_frequency);
-    u32 get_ticks();
+    void set_frequency(Channel t_channel, uint t_frequency);
+    uint get_ticks();
 
-    constexpr u32 TICKS_PER_SECOND = 1000; // TODO: handle this better
+    constexpr uint TICKS_PER_SECOND = 1000; // TODO: handle this better
 
     INTERRUPT_HANDLER void interval_handler(InterruptHandler::InterruptFrame* t_frame);
 

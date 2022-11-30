@@ -2,6 +2,7 @@
 #define IDT_INCLUDED
 
 #include "common.hpp"
+#include "data/error_or.hpp"
 
 namespace Kernel::IDT {
 
@@ -13,7 +14,7 @@ namespace Kernel::IDT {
 
     void initialize();
 
-    int set_entry(size_t t_index, void* t_handlerAddress, u16 t_segmentSelector, IDTGateType t_gateType, bool t_32bit);
+    Data::ErrorOr<void> set_entry(size_t t_index, void* t_handlerAddress, u16 t_segmentSelector, IDTGateType t_gateType, bool t_32bit);
 
     void load_table();
 

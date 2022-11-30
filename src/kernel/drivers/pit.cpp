@@ -24,22 +24,23 @@ namespace Kernel::PIT {
         }
     }
 
-    constexpr u32 round_div(u32 a, u32 b) {
-        const u32 t = a / b;
-        const u32 d1 = a - (t * b);
-        const u32 d2 = ((t + 1) * b) - a;
+    template <typename T>
+    constexpr T round_div(T a, T b) {
+        const T t = a / b;
+        const T d1 = a - (t * b);
+        const T d2 = ((t + 1) * b) - a;
         return (d1 < d2) ? (t) : (t + 1);
     }
 
-    constexpr u32 BASE_FREQUENCY = 1193182;
+    constexpr uint BASE_FREQUENCY = 1193182;
 
-    static u32 s_ticks = 0;
+    static uint s_ticks = 0;
 
     void initialize() {
-        set_frequency(Channel::ZERO, 1000);
+        set_frequency(Channel::ZERO, TICKS_PER_SECOND);
     }
 
-    void set_frequency(Channel t_channel, u32 t_frequency) {
+    void set_frequency(Channel t_channel, uint t_frequency) {
         if (t_frequency == 0) {
             return; // TODO: error codes
         }
@@ -60,7 +61,7 @@ namespace Kernel::PIT {
         io_wait();
     }
 
-    u32 get_ticks() {
+    uint get_ticks() {
         return s_ticks;
     }
 

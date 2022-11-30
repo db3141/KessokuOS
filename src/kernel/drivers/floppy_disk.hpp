@@ -11,7 +11,7 @@ namespace Kernel::FloppyDisk {
     constexpr size_t SECTOR_SIZE = 512;
     
     Data::ErrorOr<void> initialize();
-    Data::ErrorOr<void> reset();
+    Data::ErrorOr<void> reset(u8 t_drive, bool t_motorOn);
 
     Data::ErrorOr<void> read_data(u8 t_drive, size_t t_lba, size_t t_count, u8* r_buffer);
 

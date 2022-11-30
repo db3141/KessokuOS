@@ -17,6 +17,8 @@ namespace Kernel {
     using s64 = int64_t;
     using u64 = uint64_t;
 
+    using uint = unsigned int;
+
     u8 port_read_byte(u16 t_port);
     u16 port_read_hword(u16 t_port);
     void port_write_byte(u16 t_port, u8 t_value);
@@ -26,7 +28,7 @@ namespace Kernel {
     void io_wait();
 
     // sleep(1000) sleeps for 1 second
-    void sleep(u32 t_milliseconds);
+    void sleep(uint t_milliseconds);
 
     void enable_interrupts();
     void disable_interrupts();
@@ -53,12 +55,6 @@ extern "C" int memcmp(const void* t_lhs, const void* t_rhs, size_t t_count);
 #define KERNEL_STOP() do {\
     disable_interrupts();\
     KERNEL_HALT();\
-} while(false)
-
-#define GOT_HERE() do {\
-    VGA::put_string("GOT HERE: '" __FILE__ "' (");\
-    VGA::put_unsigned_decimal(__LINE__);\
-    VGA::put_string(")\n");\
 } while(false)
 
 #endif

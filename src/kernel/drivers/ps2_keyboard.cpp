@@ -7,7 +7,7 @@
 
 namespace Kernel::PS2::Keyboard {
     
-    constexpr size_t SEND_COMMAND_RETRY_LIMIT = 3;
+    constexpr uint SEND_COMMAND_RETRY_LIMIT = 3;
     constexpr size_t KEYBOARD_EVENT_QUEUE_SIZE = 32;
 
     static bool KEYBOARD_KEY_STATE[256] = {0};
@@ -600,7 +600,7 @@ namespace Kernel::PS2::Keyboard {
         };
 
         const auto get_response_unsafe = []() -> u8 {
-            for (size_t i = 0; i < 3; i++) {
+            for (size_t i = 0; i < SEND_COMMAND_RETRY_LIMIT; i++) {
                 if (port_read_byte(0x64) & 0x01) {
                     return port_read_byte(0x60);
                 }

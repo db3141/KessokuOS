@@ -116,7 +116,7 @@ namespace Kernel::DMA {
 
         port_write_byte(channelMaskPort, (t_channel & 0x03) | 0x04); // mask the DMA channel to be initialized
 
-        const u32 bufferAddress = u32(t_bufferAddress);
+        const uintptr_t bufferAddress = reinterpret_cast<uintptr_t>(t_bufferAddress);
         port_write_byte(flipFlopResetPort, 0xFF); // reset flip flop to low byte
         port_write_byte(startAddressPort, (bufferAddress >> 0) & 0xFF); // write low byte of start address
         port_write_byte(startAddressPort, (bufferAddress >> 8) & 0xFF); // write mid byte of start address
