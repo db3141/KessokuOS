@@ -2,7 +2,7 @@
 #include "pit.hpp"
 #include "interrupts/pic.hpp"
 
-#include "drivers/vga.hpp"
+#include "drivers/vga/vga.hpp"
 
 namespace Kernel::PIT {
 

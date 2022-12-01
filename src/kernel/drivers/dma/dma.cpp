@@ -1,4 +1,4 @@
-#include "drivers/vga.hpp"
+#include "drivers/vga/vga.hpp"
 #include "dma.hpp"
 
 namespace Kernel::DMA {

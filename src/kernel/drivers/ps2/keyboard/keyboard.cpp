@@ -1,9 +1,10 @@
 #include "common.hpp"
 #include "data/queue.hpp"
 #include "interrupts/pic.hpp"
-#include "ps2.hpp"
-#include "ps2_keyboard.hpp"
-#include "vga.hpp"
+
+#include "drivers/ps2/ps2.hpp"
+#include "keyboard.hpp"
+#include "drivers/vga/vga.hpp"
 
 namespace Kernel::PS2::Keyboard {
     

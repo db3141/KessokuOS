@@ -3,11 +3,11 @@
 #include "interrupts/idt.hpp"
 #include "interrupts/interrupt_handler.hpp"
 #include "interrupts/pic.hpp"
-#include "drivers/floppy_disk.hpp"
-#include "drivers/pit.hpp"
-#include "drivers/ps2.hpp"
-#include "drivers/ps2_keyboard.hpp"
-#include "drivers/vga.hpp"
+#include "drivers/disk/floppy/floppy.hpp"
+#include "drivers/pit/pit.hpp"
+#include "drivers/ps2/ps2.hpp"
+#include "drivers/ps2/keyboard/keyboard.hpp"
+#include "drivers/vga/vga.hpp"
 #include "memory-manager/manager.hpp"
 
 namespace Kernel {
@@ -19,7 +19,7 @@ namespace Kernel {
     extern "C" void _fini();
 
     extern "C" void kernel_early_main();
-    extern "C" void kernel_main();
+    [[noreturn]] void kernel_main();
 
     void kernel_early_main() {
         _init();
@@ -73,7 +73,7 @@ namespace Kernel {
         }
         VGA::put_string("Done! \n\n");
 
-        VGA::put_string("Enabling interrupts\n\n");
+        VGA::put_string("Enabling interrupts... ");
         enable_interrupts();
         VGA::put_string("Done!\n");
 
@@ -88,20 +88,18 @@ namespace Kernel {
         }
         VGA::put_string("Done!\n");
 
-        /*
-        u8 buffer[2 * FloppyDisk::SECTOR_SIZE];
-        if (FloppyDisk::read_data(0, 73, 2, buffer).is_error()) {
+        //*
+        u8 buffer[FloppyDisk::SECTOR_SIZE];
+        if (FloppyDisk::read_data(0, 80, 1, buffer).is_error()) {
             VGA::put_string("Read failed :(\n");
             KERNEL_STOP();
         }
-        */
 
-        /*
-        for (size_t i = 0; i < 2 * FloppyDisk::SECTOR_SIZE; i++) {
+        for (size_t i = 0; i < FloppyDisk::SECTOR_SIZE; i++) {
             VGA::put_char(buffer[i]);
         }
         VGA::new_line();
-        */
+        //*/
 
         VGA::put_string("Intializing Memory Manager... ");
         if (MemoryManager::initialize().is_error()) {
@@ -146,6 +144,8 @@ namespace Kernel {
             }
             KERNEL_HALT();
         }
+
+        KERNEL_STOP();
     }
 
 }

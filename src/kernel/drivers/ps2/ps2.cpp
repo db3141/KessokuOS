@@ -1,7 +1,7 @@
 #include "common.hpp"
 #include "interrupts/pic.hpp"
 #include "ps2.hpp"
-#include "vga.hpp"
+#include "drivers/vga/vga.hpp"
 
 namespace Kernel::PS2 {
 

@@ -1,7 +1,7 @@
-#include "drivers/dma.hpp"
-#include "drivers/pit.hpp"
-#include "drivers/vga.hpp"
-#include "floppy_disk.hpp"
+#include "drivers/dma/dma.hpp"
+#include "drivers/pit/pit.hpp"
+#include "drivers/vga/vga.hpp"
+#include "floppy.hpp"
 #include "interrupts/pic.hpp"
 #include "data/error_or.hpp"
 

@@ -16,12 +16,12 @@ SOURCE_FILES=\
 	common.cpp\
 	gdt.cpp\
 	\
-	drivers/dma.cpp\
-	drivers/vga.cpp\
-	drivers/ps2.cpp\
-	drivers/ps2_keyboard.cpp\
-	drivers/pit.cpp\
-	drivers/floppy_disk.cpp\
+	drivers/dma/dma.cpp\
+	drivers/vga/vga.cpp\
+	drivers/ps2/ps2.cpp\
+	drivers/ps2/keyboard/keyboard.cpp\
+	drivers/pit/pit.cpp\
+	drivers/disk/floppy/floppy.cpp\
 	\
 	interrupts/idt.cpp\
 	interrupts/pic.cpp\
@@ -34,12 +34,12 @@ HEADER_FILES=\
 	error.hpp\
 	gdt.hpp\
 	\
-	drivers/dma.hpp\
-	drivers/vga.hpp\
-	drivers/ps2.hpp\
-	drivers/ps2_keyboard.hpp\
-	drivers/pit.hpp\
-	drivers/floppy_disk.hpp\
+	drivers/dma/dma.hpp\
+	drivers/vga/vga.hpp\
+	drivers/ps2/ps2.hpp\
+	drivers/ps2/keyboard/keyboard.hpp\
+	drivers/pit/pit.hpp\
+	drivers/disk/floppy/floppy_disk.hpp\
 	\
 	interrutps/idt.hpp\
 	interrupts/interrupt_handler.hpp\
@@ -61,6 +61,9 @@ CRTN_OBJ:=$(BUILD_OUT)/crt/crtn.o
 
 OBJ_LINK_LIST:=$(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJS) $(CRTEND_OBJ) $(CRTN_OBJ)
 
+BUILD_OUT_DIRECTORIES=$(abspath $(dir $(OBJS) $(CRTI_OBJ) $(CRTN_OBJ))) # get the objects' canonical paths
+BUILD_OUT_DIRECTORIES_UNIQUE=$(shell echo $(BUILD_OUT_DIRECTORIES) | sed -e 's/ /\n/g' | awk -F "/" '{print NF-1" "$$0}' | sort -n | cut -f 2- -d ' ' | uniq) # sort by directory depth and remove duplicates
+
 all: $(OUTPUT_FILE)
 
 $(BUILD_OUT)/crt/%.o: crt/%.asm | create_build_dir
@@ -78,9 +81,8 @@ $(UNSTRIPPED_OUTPUT_FILE): $(OBJ_LINK_LIST)
 .PHONY: create_build_dir
 create_build_dir:
 	-mkdir $(BUILD_OUT)
-	-mkdir $(BUILD_OUT)/drivers $(BUILD_OUT)/interrupts $(BUILD_OUT)/memory-manager $(BUILD_OUT)/crt
+	-mkdir -p $(BUILD_OUT_DIRECTORIES_UNIQUE)
 
 .PHONY: clean
 clean:
-	-rm -rf $(BUILD_OUT)/*
-	-rmdir $(BUILD_OUT)
+	-rm -rf $(BUILD_OUT)

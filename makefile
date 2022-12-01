@@ -36,5 +36,5 @@ clean:
 	-rmdir $(BUILD_DIR)
 
 .PHONY: create_build_dir
-create_build_dir: | clean
+create_build_dir:
 	-mkdir $(BUILD_DIR)

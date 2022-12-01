@@ -1,5 +1,5 @@
 #include "common.hpp"
-#include "drivers/pit.hpp"
+#include "drivers/pit/pit.hpp"
 
 namespace Kernel {
 

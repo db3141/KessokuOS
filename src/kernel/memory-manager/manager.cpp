@@ -2,7 +2,7 @@
 
 #include "common.hpp"
 #include "manager.hpp"
-#include "drivers/vga.hpp"
+#include "drivers/vga/vga.hpp"
 
 namespace Kernel::MemoryManager {
 
