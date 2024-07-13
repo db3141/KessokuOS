@@ -1,4 +1,4 @@
-# MyOS
+# KessokuOS
 An OS project written in x86 assembly and C++20.
 
 ## Features
