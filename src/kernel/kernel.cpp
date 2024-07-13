@@ -81,7 +81,7 @@ namespace Kernel {
         VGA::put_hex(read_cmos(0x10));
         VGA::new_line();
 
-        VGA::put_string("Intializing Floppy Disk... ");
+        VGA::put_string("Initializing Floppy Disk... ");
         if (FloppyDisk::initialize().is_error()) {
             VGA::put_string("Failed :(\n");
             KERNEL_STOP();
@@ -101,13 +101,14 @@ namespace Kernel {
         VGA::new_line();
         //*/
 
-        VGA::put_string("Intializing Memory Manager... ");
+        VGA::put_string("Initializing Memory Manager... ");
         if (MemoryManager::initialize().is_error()) {
             VGA::put_string("Failed :(\n");
             KERNEL_STOP();
         }
         VGA::put_string("Done!\n");
 
+        /*
         MemoryManager::print_heap_information();
 
         char** stringArray = new char*[4];
@@ -116,6 +117,8 @@ namespace Kernel {
             stringArray[i][0] = 'A' + char(i);
             stringArray[i][1] = '\0';
         }
+        */
+
 
         delete[] stringArray[0];
         delete[] stringArray[3];

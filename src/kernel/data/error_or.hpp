@@ -7,14 +7,14 @@ namespace Kernel::Data {
 
     // Thanks SerenityOS for the idea!
 
-    template<typename Ty, typename ErrorTy=Error>
+    template<typename Ty>
     class ErrorOr {
     public:
         ErrorOr(Ty t_value) : m_isError(false) {
             m_contained.val = t_value;
         }
 
-        ErrorOr(ErrorTy t_error) : m_isError(true) {
+        ErrorOr(Error t_error) : m_isError(true) {
             m_contained.err = t_error;
         }
 
@@ -26,26 +26,26 @@ namespace Kernel::Data {
             return m_contained.val;
         }
 
-        [[nodiscard]] ErrorTy get_error() const {
+        [[nodiscard]] Error get_error() const {
             return m_contained.err;
         }
 
     private:
         union {
             Ty val;
-            ErrorTy err;
+            Error err;
         } m_contained;
         bool m_isError;
     };
 
-    template<typename ErrorTy>
-    class ErrorOr<void, ErrorTy> {
+    template <>
+    class ErrorOr<void> {
     public:
         ErrorOr() : m_isError(false) {
             ;
         }
 
-        ErrorOr(ErrorTy t_error) : m_error(t_error), m_isError(true) {
+        ErrorOr(Error t_error) : m_error(t_error), m_isError(true) {
             ;
         }
 
@@ -57,12 +57,12 @@ namespace Kernel::Data {
             ;
         }
 
-        [[nodiscard]] ErrorTy get_error() const {
+        [[nodiscard]] Error get_error() const {
             return m_error;
         }
 
     private:
-        ErrorTy m_error;
+        Error m_error;
         bool m_isError;
     };
 
