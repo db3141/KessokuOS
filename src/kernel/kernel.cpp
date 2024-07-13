@@ -117,14 +117,14 @@ namespace Kernel {
             stringArray[i][0] = 'A' + char(i);
             stringArray[i][1] = '\0';
         }
-        */
-
 
         delete[] stringArray[0];
         delete[] stringArray[3];
         delete[] stringArray[1];
         delete[] stringArray[2];
         delete[] stringArray;
+
+         */
 
         while (true) {
             for (auto e = PS2::Keyboard::poll_event(); !e.is_error(); e = PS2::Keyboard::poll_event()) {
